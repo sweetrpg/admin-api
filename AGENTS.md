@@ -53,5 +53,5 @@ go test -v -coverprofile coverage.out ./...
 Regenerate Swagger docs after changing handler annotations:
 
 ```bash
-go run github.com/swaggo/swag/cmd/swag@latest init -d cmd/admin-api/,server/
+go run github.com/swaggo/swag/cmd/swag@latest init -d cmd/admin-api/,server/,models/ --parseDependency --parseInternal
 ```
