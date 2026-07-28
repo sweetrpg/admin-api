@@ -18,14 +18,14 @@
     "paths": {
         "/banners": {
             "get": {
-                "description": "Returns active (started, not expired) banners matching any of the requested scopes, most-severe-first. Platform-scoped banners are always included. scope values look like \"platform\", \"service:catalog\", or \"page:/catalog/browse\".",
+                "description": "Default mode returns active (started, not expired) banners matching any of the requested scopes, most-severe-first; platform-scoped banners are always included. scope values look like \"platform\", \"service:catalog\", or \"page:/catalog/browse\". Pass include_inactive=true (admin-web's management view) to instead return every banner regardless of scope or expiration - scope params are ignored in that mode.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "banners"
                 ],
-                "summary": "List active banners for a scope",
+                "summary": "List banners",
                 "parameters": [
                     {
                         "type": "array",
@@ -33,10 +33,15 @@
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "Repeated scope filter, e.g. scope=platform\u0026scope=service:catalog",
+                        "description": "Repeated scope filter, e.g. scope=platform\u0026scope=service:catalog - required unless include_inactive=true",
                         "name": "scope",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Return every banner (any scope, expired or scheduled included) for admin management views",
+                        "name": "include_inactive",
+                        "in": "query"
                     }
                 ],
                 "responses": {
