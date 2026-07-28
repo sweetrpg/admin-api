@@ -44,5 +44,5 @@ jobs:
                     go run github.com/swaggo/swag/cmd/swag@latest init -d cmd/admin-api/,server/,models/ --parseDependency --parseInternal
 
                     git add docs/
-                    git commit -m "Generate docs"
+                    git commit -m "Generate docs" || exit 0
                     git push origin
