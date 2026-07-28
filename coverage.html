@@ -61,7 +61,7 @@
 				
 				<option value="file2">github.com/sweetrpg/admin-api/models/banner.go (88.9%)</option>
 				
-				<option value="file3">github.com/sweetrpg/admin-api/server/banners.go (4.8%)</option>
+				<option value="file3">github.com/sweetrpg/admin-api/server/banners.go (4.7%)</option>
 				
 				<option value="file4">github.com/sweetrpg/admin-api/server/handlers.go (0.0%)</option>
 				
@@ -349,14 +349,14 @@ const docTemplate = `{
     "paths": {
         "/banners": {
             "get": {
-                "description": "Returns active (started, not expired) banners matching any of the requested scopes, most-severe-first. Platform-scoped banners are always included. scope values look like \"platform\", \"service:catalog\", or \"page:/catalog/browse\".",
+                "description": "Default mode returns active (started, not expired) banners matching any of the requested scopes, most-severe-first; platform-scoped banners are always included. scope values look like \"platform\", \"service:catalog\", or \"page:/catalog/browse\". Pass include_inactive=true (admin-web's management view) to instead return every banner regardless of scope or expiration - scope params are ignored in that mode.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "banners"
                 ],
-                "summary": "List active banners for a scope",
+                "summary": "List banners",
                 "parameters": [
                     {
                         "type": "array",
@@ -364,10 +364,15 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "Repeated scope filter, e.g. scope=platform\u0026scope=service:catalog",
+                        "description": "Repeated scope filter, e.g. scope=platform\u0026scope=service:catalog - required unless include_inactive=true",
                         "name": "scope",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Return every banner (any scope, expired or scheduled included) for admin management views",
+                        "name": "include_inactive",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1007,67 +1012,75 @@ func createBanner(c *gin.Context) <span class="cov0" title="0">{
         c.JSON(http.StatusCreated, banner)</span>
 }
 
-// List active banner messages for one or more scopes.
+// List banner messages, either scoped-and-active (for consumers) or all of them
+// regardless of scope/expiration (for the admin UI).
 //
-//        @Summary                List active banners for a scope
-//        @Description        Returns active (started, not expired) banners matching any of the requested scopes, most-severe-first. Platform-scoped banners are always included. scope values look like "platform", "service:catalog", or "page:/catalog/browse".
+//        @Summary                List banners
+//        @Description        Default mode returns active (started, not expired) banners matching any of the requested scopes, most-severe-first; platform-scoped banners are always included. scope values look like "platform", "service:catalog", or "page:/catalog/browse". Pass include_inactive=true (admin-web's management view) to instead return every banner regardless of scope or expiration - scope params are ignored in that mode.
 //        @Tags                        banners
 //        @Produce                json
-//        @Param                        scope        query                []string        true        "Repeated scope filter, e.g. scope=platform&amp;scope=service:catalog"
+//        @Param                        scope                                query                []string        false        "Repeated scope filter, e.g. scope=platform&amp;scope=service:catalog - required unless include_inactive=true"
+//        @Param                        include_inactive        query                bool                false        "Return every banner (any scope, expired or scheduled included) for admin management views"
 //        @Success                200                {array}                models.BannerMessage
 //        @Failure                400                {object}        apiv.ErrorVO
 //        @Failure                500                {object}        apiv.ErrorVO
 //        @Router                        /banners [get]
 func listBanners(c *gin.Context) <span class="cov0" title="0">{
+        includeInactive := c.Query("include_inactive") == "true"
         scopes := c.QueryArray("scope")
-        if len(scopes) == 0 </span><span class="cov0" title="0">{
-                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "missing_scope", Message: "at least one scope query param is required"})
+        if !includeInactive &amp;&amp; len(scopes) == 0 </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "missing_scope", Message: "at least one scope query param is required unless include_inactive=true"})
                 return
         }</span>
 
-        <span class="cov0" title="0">var serviceValues, pageValues []string
-        for _, raw := range scopes </span><span class="cov0" title="0">{
-                scopeType, scopeValue := parseScope(raw)
-                switch scopeType </span>{
-                case models.ScopeService:<span class="cov0" title="0">
-                        serviceValues = append(serviceValues, scopeValue)</span>
-                case models.ScopePage:<span class="cov0" title="0">
-                        pageValues = append(pageValues, scopeValue)</span>
+        <span class="cov0" title="0">filter := bson.D{}
+        if !includeInactive </span><span class="cov0" title="0">{
+                var serviceValues, pageValues []string
+                for _, raw := range scopes </span><span class="cov0" title="0">{
+                        scopeType, scopeValue := parseScope(raw)
+                        switch scopeType </span>{
+                        case models.ScopeService:<span class="cov0" title="0">
+                                serviceValues = append(serviceValues, scopeValue)</span>
+                        case models.ScopePage:<span class="cov0" title="0">
+                                pageValues = append(pageValues, scopeValue)</span>
+                        }
+                        // models.ScopePlatform requires no extra collection - platform banners are
+                        // always included below.
                 }
-                // models.ScopePlatform requires no extra collection - platform banners are
-                // always included below.
+
+                <span class="cov0" title="0">now := time.Now().UTC()
+                activeFilter := bson.D{
+                        {Key: "expires_at", Value: bson.D{{Key: "$gt", Value: now}}},
+                        {Key: "$or", Value: bson.A{
+                                bson.D{{Key: "starts_at", Value: bson.D{{Key: "$exists", Value: false}}}},
+                                bson.D{{Key: "starts_at", Value: nil}},
+                                bson.D{{Key: "starts_at", Value: bson.D{{Key: "$lte", Value: now}}}},
+                        }},
+                }
+
+                scopeOr := bson.A{bson.D{{Key: "scope_type", Value: models.ScopePlatform}}}
+                if len(serviceValues) &gt; 0 </span><span class="cov0" title="0">{
+                        scopeOr = append(scopeOr, bson.D{
+                                {Key: "scope_type", Value: models.ScopeService},
+                                {Key: "scope_value", Value: bson.D{{Key: "$in", Value: serviceValues}}},
+                        })
+                }</span>
+                <span class="cov0" title="0">if len(pageValues) &gt; 0 </span><span class="cov0" title="0">{
+                        scopeOr = append(scopeOr, bson.D{
+                                {Key: "scope_type", Value: models.ScopePage},
+                                {Key: "scope_value", Value: bson.D{{Key: "$in", Value: pageValues}}},
+                        })
+                }</span>
+
+                <span class="cov0" title="0">filter = bson.D{
+                        {Key: "$and", Value: bson.A{activeFilter, bson.D{{Key: "$or", Value: scopeOr}}}},
+                }</span>
         }
 
-        <span class="cov0" title="0">now := time.Now().UTC()
-        activeFilter := bson.D{
-                {Key: "expires_at", Value: bson.D{{Key: "$gt", Value: now}}},
-                {Key: "$or", Value: bson.A{
-                        bson.D{{Key: "starts_at", Value: bson.D{{Key: "$exists", Value: false}}}},
-                        bson.D{{Key: "starts_at", Value: nil}},
-                        bson.D{{Key: "starts_at", Value: bson.D{{Key: "$lte", Value: now}}}},
-                }},
-        }
-
-        scopeOr := bson.A{bson.D{{Key: "scope_type", Value: models.ScopePlatform}}}
-        if len(serviceValues) &gt; 0 </span><span class="cov0" title="0">{
-                scopeOr = append(scopeOr, bson.D{
-                        {Key: "scope_type", Value: models.ScopeService},
-                        {Key: "scope_value", Value: bson.D{{Key: "$in", Value: serviceValues}}},
-                })
-        }</span>
-        <span class="cov0" title="0">if len(pageValues) &gt; 0 </span><span class="cov0" title="0">{
-                scopeOr = append(scopeOr, bson.D{
-                        {Key: "scope_type", Value: models.ScopePage},
-                        {Key: "scope_value", Value: bson.D{{Key: "$in", Value: pageValues}}},
-                })
-        }</span>
-
-        <span class="cov0" title="0">filter := bson.D{
-                {Key: "$and", Value: bson.A{activeFilter, bson.D{{Key: "$or", Value: scopeOr}}}},
-        }
-
-        _, span := otel.Tracer("banners").Start(c.Request.Context(), "list-banners",
-                oteltrace.WithAttributes(attribute.StringSlice("scope", scopes)))
+        <span class="cov0" title="0">_, span := otel.Tracer("banners").Start(c.Request.Context(), "list-banners",
+                oteltrace.WithAttributes(
+                        attribute.StringSlice("scope", scopes),
+                        attribute.Bool("include_inactive", includeInactive)))
         banners, err := database.Query[models.BannerMessage](constants.BannerCollection, filter, nil, nil, 0, 1000)
         span.End()
         if err != nil </span><span class="cov0" title="0">{
