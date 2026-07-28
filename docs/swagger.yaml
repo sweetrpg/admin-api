@@ -1,0 +1,290 @@
+definitions:
+  models.BannerMessage:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      expires_at:
+        type: string
+      id:
+        type: string
+      message:
+        type: string
+      scope_type:
+        $ref: '#/definitions/models.ScopeType'
+      scope_value:
+        type: string
+      severity:
+        $ref: '#/definitions/models.Severity'
+      starts_at:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.ScopeType:
+    enum:
+    - platform
+    - service
+    - page
+    type: string
+    x-enum-varnames:
+    - ScopePlatform
+    - ScopeService
+    - ScopePage
+  models.Severity:
+    enum:
+    - info
+    - warning
+    - critical
+    type: string
+    x-enum-varnames:
+    - SeverityInfo
+    - SeverityWarning
+    - SeverityCritical
+  server.createBannerRequest:
+    properties:
+      created_by:
+        type: string
+      expires_at:
+        type: string
+      message:
+        type: string
+      scope_type:
+        $ref: '#/definitions/models.ScopeType'
+      scope_value:
+        type: string
+      severity:
+        $ref: '#/definitions/models.Severity'
+      starts_at:
+        type: string
+    required:
+    - created_by
+    - expires_at
+    - message
+    - scope_type
+    - severity
+    type: object
+  server.updateBannerRequest:
+    properties:
+      expires_at:
+        type: string
+      message:
+        type: string
+      scope_type:
+        $ref: '#/definitions/models.ScopeType'
+      scope_value:
+        type: string
+      severity:
+        $ref: '#/definitions/models.Severity'
+      starts_at:
+        type: string
+    required:
+    - expires_at
+    - message
+    - scope_type
+    - severity
+    type: object
+  vo.ErrorVO:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  vo.HealthResponseVO:
+    properties:
+      collections:
+        items:
+          type: string
+        type: array
+      database:
+        type: string
+      errors:
+        type: integer
+      messages:
+        items:
+          type: string
+        type: array
+      ping:
+        type: string
+    type: object
+  vo.PingResponseVO:
+    properties:
+      date:
+        type: string
+      hostname:
+        type: string
+    type: object
+info:
+  contact:
+    email: admin@sweetrpg.com
+    name: API Support
+    url: https://sweetrpg.com
+  description: Swagger APIs
+  license:
+    name: MIT
+    url: https://mit-license.org/
+  termsOfService: https://pilgrimagesoftware.com/terms/
+  title: Admin API service
+  version: "1.0"
+paths:
+  /banners:
+    get:
+      description: Returns active (started, not expired) banners matching any of the
+        requested scopes, most-severe-first. Platform-scoped banners are always included.
+        scope values look like "platform", "service:catalog", or "page:/catalog/browse".
+      parameters:
+      - collectionFormat: csv
+        description: Repeated scope filter, e.g. scope=platform&scope=service:catalog
+        in: query
+        items:
+          type: string
+        name: scope
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.BannerMessage'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: List active banners for a scope
+      tags:
+      - banners
+    post:
+      consumes:
+      - application/json
+      description: Creates a new admin banner message. expires_at is required; a banner
+        without one is rejected.
+      parameters:
+      - description: Banner message
+        in: body
+        name: banner
+        required: true
+        schema:
+          $ref: '#/definitions/server.createBannerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.BannerMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: Create a banner message
+      tags:
+      - banners
+  /banners/{id}:
+    delete:
+      description: Deletes a banner message; it is immediately excluded from subsequent
+        queries.
+      parameters:
+      - description: Banner ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema: {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: Delete a banner message
+      tags:
+      - banners
+    put:
+      consumes:
+      - application/json
+      description: Replaces the mutable fields of an existing banner message. expires_at
+        is required.
+      parameters:
+      - description: Banner ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated banner message
+        in: body
+        name: banner
+        required: true
+        schema:
+          $ref: '#/definitions/server.updateBannerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.BannerMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: Update a banner message
+      tags:
+      - banners
+  /status/health:
+    get:
+      description: Health check
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vo.HealthResponseVO'
+      summary: Health check
+      tags:
+      - status
+  /status/ping:
+    get:
+      description: Ping
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vo.PingResponseVO'
+      summary: Ping
+      tags:
+      - status
+swagger: "2.0"
