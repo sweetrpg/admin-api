@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  mongodb:
+    image: mongodb/mongodb-community-server:7.0.14-ubi8
+    networks:
+      - admin-api
+  tracing:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    networks:
+      - admin-api
+  app:
+    ports:
+      - 8000:8000
+    env_file: ../.env
+    environment:
+      DB_URI: mongodb://mongodb:27017/admin-api
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tracing:4318/
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    networks:
+      - admin-api
+    links:
+      - mongodb
+      - tracing
+
+networks:
+  admin-api:
