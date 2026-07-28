@@ -131,18 +131,26 @@ info:
 paths:
   /banners:
     get:
-      description: Returns active (started, not expired) banners matching any of the
-        requested scopes, most-severe-first. Platform-scoped banners are always included.
-        scope values look like "platform", "service:catalog", or "page:/catalog/browse".
+      description: Default mode returns active (started, not expired) banners matching
+        any of the requested scopes, most-severe-first; platform-scoped banners are
+        always included. scope values look like "platform", "service:catalog", or
+        "page:/catalog/browse". Pass include_inactive=true (admin-web's management
+        view) to instead return every banner regardless of scope or expiration - scope
+        params are ignored in that mode.
       parameters:
       - collectionFormat: csv
         description: Repeated scope filter, e.g. scope=platform&scope=service:catalog
+          - required unless include_inactive=true
         in: query
         items:
           type: string
         name: scope
-        required: true
         type: array
+      - description: Return every banner (any scope, expired or scheduled included)
+          for admin management views
+        in: query
+        name: include_inactive
+        type: boolean
       produces:
       - application/json
       responses:
@@ -160,7 +168,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/vo.ErrorVO'
-      summary: List active banners for a scope
+      summary: List banners
       tags:
       - banners
     post:
