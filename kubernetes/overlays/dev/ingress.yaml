@@ -1,0 +1,29 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: api-v1
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    kubernetes.io/ingress.class: traefik
+    cert-manager.io/cluster-issuer: letsencrypt-prd
+
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: api.admin.dev.sweetrpg.com
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: api-v1
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - api.admin.dev.sweetrpg.com
+      secretName: admin-api-v1-tls
