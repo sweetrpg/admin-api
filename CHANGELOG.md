@@ -1,4 +1,14 @@
 
+## 0.2.0 - 2026-08-01
+
+### Added
+- Require internal-service write auth and audit writes (#12)
+
+
+### Fixed
+- Point local overlay at the shared local MongoDB
+
+
 ## 0.1.0 - 2026-08-01
 
 ### Added
