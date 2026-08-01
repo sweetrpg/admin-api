@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sweetrpg/admin-api/constants"
 	"github.com/sweetrpg/admin-api/models"
+	"github.com/sweetrpg/admin-api/server/middleware"
 	apiv "github.com/sweetrpg/api-core.go/vo"
 	"github.com/sweetrpg/common.go/logging"
 	"github.com/sweetrpg/mongodb.go/database"
@@ -22,10 +23,12 @@ import (
 func setupBannerHandlers(g *gin.Engine) {
 	logging.Logger.Info("Setting up banner endpoint handlers...")
 
-	g.POST("/banners", createBanner)
 	g.GET("/banners", listBanners)
-	g.PUT("/banners/:id", updateBanner)
-	g.DELETE("/banners/:id", deleteBanner)
+
+	writes := g.Group("/banners", middleware.WriteAuth())
+	writes.POST("", createBanner)
+	writes.PUT("/:id", updateBanner)
+	writes.DELETE("/:id", deleteBanner)
 }
 
 // createBannerRequest is the payload accepted by POST /banners.
@@ -54,14 +57,17 @@ type updateBannerRequest struct {
 // Create a banner message.
 //
 //	@Summary		Create a banner message
-//	@Description	Creates a new admin banner message. expires_at is required; a banner without one is rejected.
+//	@Description	Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires internal-service write auth.
 //	@Tags			banners
 //	@Accept			json
 //	@Produce		json
-//	@Param			banner	body		createBannerRequest	true	"Banner message"
-//	@Success		201		{object}	models.BannerMessage
-//	@Failure		400		{object}	apiv.ErrorVO
-//	@Failure		500		{object}	apiv.ErrorVO
+//	@Param			X-Internal-Service-Token	header		string				true	"Shared internal-service secret"
+//	@Param			X-Acting-User-Sub			header		string				true	"Acting admin's Auth0 sub, for audit attribution"
+//	@Param			banner						body		createBannerRequest	true	"Banner message"
+//	@Success		201							{object}	models.BannerMessage
+//	@Failure		400							{object}	apiv.ErrorVO
+//	@Failure		401							{object}	apiv.ErrorVO
+//	@Failure		500							{object}	apiv.ErrorVO
 //	@Router			/banners [post]
 func createBanner(c *gin.Context) {
 	var req createBannerRequest
@@ -88,17 +94,35 @@ func createBanner(c *gin.Context) {
 		return
 	}
 
+	auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "create_banner", "", req.Message)
+	if err != nil {
+		logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to create banner"})
+		return
+	}
+
 	_, span := otel.Tracer("banners").Start(c.Request.Context(), "create-banner")
 	id, err := database.Insert(constants.BannerCollection, banner)
 	span.End()
 	if err != nil {
 		logging.Logger.Error("Failed to insert banner", "error", err.Error())
+		completeAudit(auditID, models.AuditFailed, err.Error())
 		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "insert_failed", Message: "failed to create banner"})
 		return
 	}
 	banner.ID = id
+	completeAudit(auditID, models.AuditSucceeded, "")
 
 	c.JSON(http.StatusCreated, banner)
+}
+
+// completeAudit finalizes an audit record's status. Best-effort: logged as a
+// warning on failure rather than surfaced to the caller, since the mutation
+// it covers has already happened by the time this runs.
+func completeAudit(auditID primitive.ObjectID, status models.AuditStatus, errMessage string) {
+	if err := models.CompleteAudit(auditID, status, errMessage); err != nil {
+		logging.Logger.Warn("Failed to complete audit record", "auditID", auditID, "status", status, "error", err.Error())
+	}
 }
 
 // List banner messages, either scoped-and-active (for consumers) or all of them
@@ -191,16 +215,19 @@ func listBanners(c *gin.Context) {
 // Update a banner message.
 //
 //	@Summary		Update a banner message
-//	@Description	Replaces the mutable fields of an existing banner message. expires_at is required.
+//	@Description	Replaces the mutable fields of an existing banner message. expires_at is required. Requires internal-service write auth.
 //	@Tags			banners
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		string					true	"Banner ID"
-//	@Param			banner	body		updateBannerRequest		true	"Updated banner message"
-//	@Success		200		{object}	models.BannerMessage
-//	@Failure		400		{object}	apiv.ErrorVO
-//	@Failure		404		{object}	apiv.ErrorVO
-//	@Failure		500		{object}	apiv.ErrorVO
+//	@Param			X-Internal-Service-Token	header		string				true	"Shared internal-service secret"
+//	@Param			X-Acting-User-Sub			header		string				true	"Acting admin's Auth0 sub, for audit attribution"
+//	@Param			id							path		string				true	"Banner ID"
+//	@Param			banner						body		updateBannerRequest	true	"Updated banner message"
+//	@Success		200							{object}	models.BannerMessage
+//	@Failure		400							{object}	apiv.ErrorVO
+//	@Failure		401							{object}	apiv.ErrorVO
+//	@Failure		404							{object}	apiv.ErrorVO
+//	@Failure		500							{object}	apiv.ErrorVO
 //	@Router			/banners/{id} [put]
 func updateBanner(c *gin.Context) {
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
@@ -244,19 +271,29 @@ func updateBanner(c *gin.Context) {
 		return
 	}
 
+	auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "update_banner", id.Hex(), updated.Message)
+	if err != nil {
+		logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to update banner"})
+		return
+	}
+
 	_, span := otel.Tracer("banners").Start(c.Request.Context(), "update-banner",
 		oteltrace.WithAttributes(attribute.String("id", id.Hex())))
 	matched, _, err := database.Update(constants.BannerCollection, id, updated)
 	span.End()
 	if err != nil {
 		logging.Logger.Error("Failed to update banner", "error", err.Error())
+		completeAudit(auditID, models.AuditFailed, err.Error())
 		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "update_failed", Message: "failed to update banner"})
 		return
 	}
 	if matched == 0 {
+		completeAudit(auditID, models.AuditFailed, "banner not found")
 		c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "banner not found"})
 		return
 	}
+	completeAudit(auditID, models.AuditSucceeded, "")
 
 	c.JSON(http.StatusOK, updated)
 }
@@ -264,18 +301,28 @@ func updateBanner(c *gin.Context) {
 // Delete a banner message.
 //
 //	@Summary		Delete a banner message
-//	@Description	Deletes a banner message; it is immediately excluded from subsequent queries.
+//	@Description	Deletes a banner message; it is immediately excluded from subsequent queries. Requires internal-service write auth.
 //	@Tags			banners
-//	@Param			id	path	string	true	"Banner ID"
-//	@Success		204	{object}	interface{}
-//	@Failure		400	{object}	apiv.ErrorVO
-//	@Failure		404	{object}	apiv.ErrorVO
-//	@Failure		500	{object}	apiv.ErrorVO
+//	@Param			X-Internal-Service-Token	header	string	true	"Shared internal-service secret"
+//	@Param			X-Acting-User-Sub			header	string	true	"Acting admin's Auth0 sub, for audit attribution"
+//	@Param			id							path	string	true	"Banner ID"
+//	@Success		204							{object}	interface{}
+//	@Failure		400							{object}	apiv.ErrorVO
+//	@Failure		401							{object}	apiv.ErrorVO
+//	@Failure		404							{object}	apiv.ErrorVO
+//	@Failure		500							{object}	apiv.ErrorVO
 //	@Router			/banners/{id} [delete]
 func deleteBanner(c *gin.Context) {
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_id", Message: "id must be a valid object id"})
+		return
+	}
+
+	auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "delete_banner", id.Hex(), "")
+	if err != nil {
+		logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to delete banner"})
 		return
 	}
 
@@ -285,13 +332,16 @@ func deleteBanner(c *gin.Context) {
 	span.End()
 	if err != nil {
 		logging.Logger.Error("Failed to delete banner", "error", err.Error())
+		completeAudit(auditID, models.AuditFailed, err.Error())
 		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "delete_failed", Message: "failed to delete banner"})
 		return
 	}
 	if !deleted {
+		completeAudit(auditID, models.AuditFailed, "banner not found")
 		c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "banner not found"})
 		return
 	}
+	completeAudit(auditID, models.AuditSucceeded, "")
 
 	c.Status(http.StatusNoContent)
 }

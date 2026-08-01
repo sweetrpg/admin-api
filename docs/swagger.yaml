@@ -175,8 +175,18 @@ paths:
       consumes:
       - application/json
       description: Creates a new admin banner message. expires_at is required; a banner
-        without one is rejected.
+        without one is rejected. Requires internal-service write auth.
       parameters:
+      - description: Shared internal-service secret
+        in: header
+        name: X-Internal-Service-Token
+        required: true
+        type: string
+      - description: Acting admin's Auth0 sub, for audit attribution
+        in: header
+        name: X-Acting-User-Sub
+        required: true
+        type: string
       - description: Banner message
         in: body
         name: banner
@@ -194,6 +204,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/vo.ErrorVO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
         "500":
           description: Internal Server Error
           schema:
@@ -204,8 +218,18 @@ paths:
   /banners/{id}:
     delete:
       description: Deletes a banner message; it is immediately excluded from subsequent
-        queries.
+        queries. Requires internal-service write auth.
       parameters:
+      - description: Shared internal-service secret
+        in: header
+        name: X-Internal-Service-Token
+        required: true
+        type: string
+      - description: Acting admin's Auth0 sub, for audit attribution
+        in: header
+        name: X-Acting-User-Sub
+        required: true
+        type: string
       - description: Banner ID
         in: path
         name: id
@@ -217,6 +241,10 @@ paths:
           schema: {}
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/vo.ErrorVO'
         "404":
@@ -234,8 +262,18 @@ paths:
       consumes:
       - application/json
       description: Replaces the mutable fields of an existing banner message. expires_at
-        is required.
+        is required. Requires internal-service write auth.
       parameters:
+      - description: Shared internal-service secret
+        in: header
+        name: X-Internal-Service-Token
+        required: true
+        type: string
+      - description: Acting admin's Auth0 sub, for audit attribution
+        in: header
+        name: X-Acting-User-Sub
+        required: true
+        type: string
       - description: Banner ID
         in: path
         name: id
@@ -256,6 +294,10 @@ paths:
             $ref: '#/definitions/models.BannerMessage'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/vo.ErrorVO'
         "404":
