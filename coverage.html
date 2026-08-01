@@ -59,13 +59,17 @@
 				
 				<option value="file1">github.com/sweetrpg/admin-api/docs/docs.go (0.0%)</option>
 				
-				<option value="file2">github.com/sweetrpg/admin-api/models/banner.go (88.9%)</option>
+				<option value="file2">github.com/sweetrpg/admin-api/models/audit.go (0.0%)</option>
 				
-				<option value="file3">github.com/sweetrpg/admin-api/server/banners.go (4.7%)</option>
+				<option value="file3">github.com/sweetrpg/admin-api/models/banner.go (88.9%)</option>
 				
-				<option value="file4">github.com/sweetrpg/admin-api/server/handlers.go (0.0%)</option>
+				<option value="file4">github.com/sweetrpg/admin-api/server/banners.go (12.0%)</option>
 				
-				<option value="file5">github.com/sweetrpg/admin-api/server/status.go (0.0%)</option>
+				<option value="file5">github.com/sweetrpg/admin-api/server/handlers.go (100.0%)</option>
+				
+				<option value="file6">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (100.0%)</option>
+				
+				<option value="file7">github.com/sweetrpg/admin-api/server/status.go (45.5%)</option>
 				
 				</select>
 			</div>
@@ -152,6 +156,8 @@ func main() <span class="cov0" title="0">{
         // CORS
         setupCORS(r)
 
+        checkWriteAuthConfig()
+
         // Setup Prometheus metrics
         setupMetrics(r)
 
@@ -160,6 +166,9 @@ func main() <span class="cov0" title="0">{
 
         if err := models.EnsureIndexes(context.Background()); err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to ensure indexes", "error", err.Error())
+        }</span>
+        <span class="cov0" title="0">if err := models.EnsureAuditIndexes(context.Background()); err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to ensure audit indexes", "error", err.Error())
         }</span>
 
         // Actuator
@@ -186,6 +195,12 @@ func setupSwagger(r *gin.Engine) <span class="cov0" title="0">{
         // swagger middleware to serve the API docs
         r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 }</span>
+
+func checkWriteAuthConfig() <span class="cov0" title="0">{
+        if util.GetEnv(constants.INTERNAL_SERVICE_TOKEN, "") == "" </span><span class="cov0" title="0">{
+                logging.Logger.Warn("INTERNAL_SERVICE_TOKEN not set, all write routes will reject every request with 401")
+        }</span>
+}
 
 func setupCORS(r *gin.Engine) <span class="cov0" title="0">{
         logging.Logger.Info("Setting up CORS...")
@@ -400,7 +415,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a new admin banner message. expires_at is required; a banner without one is rejected.",
+                "description": "Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires internal-service write auth.",
                 "consumes": [
                     "application/json"
                 ],
@@ -412,6 +427,20 @@ const docTemplate = `{
                 ],
                 "summary": "Create a banner message",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shared internal-service secret",
+                        "name": "X-Internal-Service-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acting admin's Auth0 sub, for audit attribution",
+                        "name": "X-Acting-User-Sub",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "description": "Banner message",
                         "name": "banner",
@@ -435,6 +464,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/vo.ErrorVO"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -446,7 +481,7 @@ const docTemplate = `{
         },
         "/banners/{id}": {
             "put": {
-                "description": "Replaces the mutable fields of an existing banner message. expires_at is required.",
+                "description": "Replaces the mutable fields of an existing banner message. expires_at is required. Requires internal-service write auth.",
                 "consumes": [
                     "application/json"
                 ],
@@ -458,6 +493,20 @@ const docTemplate = `{
                 ],
                 "summary": "Update a banner message",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shared internal-service secret",
+                        "name": "X-Internal-Service-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acting admin's Auth0 sub, for audit attribution",
+                        "name": "X-Acting-User-Sub",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "description": "Banner ID",
@@ -488,6 +537,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/vo.ErrorVO"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -503,12 +558,26 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Deletes a banner message; it is immediately excluded from subsequent queries.",
+                "description": "Deletes a banner message; it is immediately excluded from subsequent queries. Requires internal-service write auth.",
                 "tags": [
                     "banners"
                 ],
                 "summary": "Delete a banner message",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shared internal-service secret",
+                        "name": "X-Internal-Service-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acting admin's Auth0 sub, for audit attribution",
+                        "name": "X-Acting-User-Sub",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "description": "Banner ID",
@@ -524,6 +593,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/vo.ErrorVO"
                         }
@@ -778,7 +853,104 @@ func init() <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">// Package models defines the persisted document shapes for admin-api.
+		<pre class="file" id="file2" style="display: none">package models
+
+import (
+        "context"
+        "time"
+
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/mongo"
+        "go.mongodb.org/mongo-driver/mongo/options"
+
+        "go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+// AuditStatus tracks whether the mutation an AdminActionAuditLog record
+// covers actually completed.
+type AuditStatus string
+
+const (
+        AuditAttempted AuditStatus = "attempted"
+        AuditSucceeded AuditStatus = "succeeded"
+        AuditFailed    AuditStatus = "failed"
+)
+
+// AdminActionAuditLog attributes a write-route mutation to the acting user
+// who made it. Written *before* the mutation is attempted (status
+// "attempted") and updated *after* it completes - see RecordAuditAttempt and
+// CompleteAudit. If the "before" write fails, the mutation must not be
+// performed: an audit trail that can silently fail to exist is not an audit
+// trail, mirroring users-api's AdminActionAuditLog/performAudited pattern.
+// bson tags on every field but ID/Status use omitempty: database.Update
+// replaces the stored document with a $set of every marshaled field of
+// whatever doc it's given, so CompleteAudit - which only ever populates
+// Status/CompletedAt/ErrorMessage on top of an existing record's ID - must
+// not marshal its unset fields as empty values, or it would overwrite the
+// original ActingUserSub/Action/AttemptedAt with blanks.
+type AdminActionAuditLog struct {
+        ID            primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+        ActingUserSub string             `bson:"acting_user_sub,omitempty" json:"acting_user_sub"`
+        Action        string             `bson:"action,omitempty" json:"action"`
+        ResourceID    string             `bson:"resource_id,omitempty" json:"resource_id,omitempty"`
+        Detail        string             `bson:"detail,omitempty" json:"detail,omitempty"`
+        Status        AuditStatus        `bson:"status" json:"status"`
+        AttemptedAt   time.Time          `bson:"attempted_at,omitempty" json:"attempted_at"`
+        CompletedAt   *time.Time         `bson:"completed_at,omitempty" json:"completed_at,omitempty"`
+        ErrorMessage  string             `bson:"error_message,omitempty" json:"error_message,omitempty"`
+}
+
+// RecordAuditAttempt writes the "attempted" audit record for a write-route
+// mutation before the mutation itself runs. Returns the record's ID for a
+// later CompleteAudit call. Callers must not perform the mutation if this
+// returns an error.
+func RecordAuditAttempt(actingUserSub, action, resourceID, detail string) (primitive.ObjectID, error) <span class="cov0" title="0">{
+        entry := &amp;AdminActionAuditLog{
+                ActingUserSub: actingUserSub,
+                Action:        action,
+                ResourceID:    resourceID,
+                Detail:        detail,
+                Status:        AuditAttempted,
+                AttemptedAt:   time.Now().UTC(),
+        }
+        return database.Insert(constants.AdminActionAuditLogCollection, entry)
+}</span>
+
+// CompleteAudit updates an audit record to its final status after the
+// mutation it covers has run. Best-effort: a failure here doesn't undo a
+// mutation that already happened, so callers should log a warning rather
+// than fail the request on error.
+func CompleteAudit(id primitive.ObjectID, status AuditStatus, errMessage string) error <span class="cov0" title="0">{
+        now := time.Now().UTC()
+        update := &amp;AdminActionAuditLog{
+                ID:           id,
+                Status:       status,
+                CompletedAt:  &amp;now,
+                ErrorMessage: errMessage,
+        }
+        _, _, err := database.Update(constants.AdminActionAuditLogCollection, id, update)
+        return err
+}</span>
+
+// EnsureAuditIndexes creates the TTL index on admin_action_audit_logs: audit
+// records are retained for 1 year (longer than banners' expiry-driven TTL -
+// see design.md's Open Questions), independent of any per-document field.
+// Safe to call on every startup - CreateOne is idempotent for an identical
+// index definition.
+func EnsureAuditIndexes(ctx context.Context) error <span class="cov0" title="0">{
+        collection := database.Db.Collection(constants.AdminActionAuditLogCollection)
+
+        _, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+                Keys:    bson.D{{Key: "attempted_at", Value: 1}},
+                Options: options.Index().SetExpireAfterSeconds(365 * 24 * 60 * 60),
+        })
+        return err
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">// Package models defines the persisted document shapes for admin-api.
 package models
 
 import (
@@ -909,7 +1081,7 @@ func EnsureIndexes(ctx context.Context) error <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file3" style="display: none">package server
+		<pre class="file" id="file4" style="display: none">package server
 
 import (
         "net/http"
@@ -920,6 +1092,7 @@ import (
         "github.com/gin-gonic/gin"
         "github.com/sweetrpg/admin-api/constants"
         "github.com/sweetrpg/admin-api/models"
+        "github.com/sweetrpg/admin-api/server/middleware"
         apiv "github.com/sweetrpg/api-core.go/vo"
         "github.com/sweetrpg/common.go/logging"
         "github.com/sweetrpg/mongodb.go/database"
@@ -930,13 +1103,15 @@ import (
         oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-func setupBannerHandlers(g *gin.Engine) <span class="cov0" title="0">{
+func setupBannerHandlers(g *gin.Engine) <span class="cov1" title="1">{
         logging.Logger.Info("Setting up banner endpoint handlers...")
 
-        g.POST("/banners", createBanner)
         g.GET("/banners", listBanners)
-        g.PUT("/banners/:id", updateBanner)
-        g.DELETE("/banners/:id", deleteBanner)
+
+        writes := g.Group("/banners", middleware.WriteAuth())
+        writes.POST("", createBanner)
+        writes.PUT("/:id", updateBanner)
+        writes.DELETE("/:id", deleteBanner)
 }</span>
 
 // createBannerRequest is the payload accepted by POST /banners.
@@ -965,14 +1140,17 @@ type updateBannerRequest struct {
 // Create a banner message.
 //
 //        @Summary                Create a banner message
-//        @Description        Creates a new admin banner message. expires_at is required; a banner without one is rejected.
+//        @Description        Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires internal-service write auth.
 //        @Tags                        banners
 //        @Accept                        json
 //        @Produce                json
-//        @Param                        banner        body                createBannerRequest        true        "Banner message"
-//        @Success                201                {object}        models.BannerMessage
-//        @Failure                400                {object}        apiv.ErrorVO
-//        @Failure                500                {object}        apiv.ErrorVO
+//        @Param                        X-Internal-Service-Token        header                string                                true        "Shared internal-service secret"
+//        @Param                        X-Acting-User-Sub                        header                string                                true        "Acting admin's Auth0 sub, for audit attribution"
+//        @Param                        banner                                                body                createBannerRequest        true        "Banner message"
+//        @Success                201                                                        {object}        models.BannerMessage
+//        @Failure                400                                                        {object}        apiv.ErrorVO
+//        @Failure                401                                                        {object}        apiv.ErrorVO
+//        @Failure                500                                                        {object}        apiv.ErrorVO
 //        @Router                        /banners [post]
 func createBanner(c *gin.Context) <span class="cov0" title="0">{
         var req createBannerRequest
@@ -999,17 +1177,35 @@ func createBanner(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "create_banner", "", req.Message)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to create banner"})
+                return
+        }</span>
+
         <span class="cov0" title="0">_, span := otel.Tracer("banners").Start(c.Request.Context(), "create-banner")
         id, err := database.Insert(constants.BannerCollection, banner)
         span.End()
         if err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to insert banner", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
                 c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "insert_failed", Message: "failed to create banner"})
                 return
         }</span>
         <span class="cov0" title="0">banner.ID = id
+        completeAudit(auditID, models.AuditSucceeded, "")
 
         c.JSON(http.StatusCreated, banner)</span>
+}
+
+// completeAudit finalizes an audit record's status. Best-effort: logged as a
+// warning on failure rather than surfaced to the caller, since the mutation
+// it covers has already happened by the time this runs.
+func completeAudit(auditID primitive.ObjectID, status models.AuditStatus, errMessage string) <span class="cov0" title="0">{
+        if err := models.CompleteAudit(auditID, status, errMessage); err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Warn("Failed to complete audit record", "auditID", auditID, "status", status, "error", err.Error())
+        }</span>
 }
 
 // List banner messages, either scoped-and-active (for consumers) or all of them
@@ -1025,10 +1221,10 @@ func createBanner(c *gin.Context) <span class="cov0" title="0">{
 //        @Failure                400                {object}        apiv.ErrorVO
 //        @Failure                500                {object}        apiv.ErrorVO
 //        @Router                        /banners [get]
-func listBanners(c *gin.Context) <span class="cov0" title="0">{
+func listBanners(c *gin.Context) <span class="cov1" title="1">{
         includeInactive := c.Query("include_inactive") == "true"
         scopes := c.QueryArray("scope")
-        if !includeInactive &amp;&amp; len(scopes) == 0 </span><span class="cov0" title="0">{
+        if !includeInactive &amp;&amp; len(scopes) == 0 </span><span class="cov1" title="1">{
                 c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "missing_scope", Message: "at least one scope query param is required unless include_inactive=true"})
                 return
         }</span>
@@ -1102,16 +1298,19 @@ func listBanners(c *gin.Context) <span class="cov0" title="0">{
 // Update a banner message.
 //
 //        @Summary                Update a banner message
-//        @Description        Replaces the mutable fields of an existing banner message. expires_at is required.
+//        @Description        Replaces the mutable fields of an existing banner message. expires_at is required. Requires internal-service write auth.
 //        @Tags                        banners
 //        @Accept                        json
 //        @Produce                json
-//        @Param                        id                path                string                                        true        "Banner ID"
-//        @Param                        banner        body                updateBannerRequest                true        "Updated banner message"
-//        @Success                200                {object}        models.BannerMessage
-//        @Failure                400                {object}        apiv.ErrorVO
-//        @Failure                404                {object}        apiv.ErrorVO
-//        @Failure                500                {object}        apiv.ErrorVO
+//        @Param                        X-Internal-Service-Token        header                string                                true        "Shared internal-service secret"
+//        @Param                        X-Acting-User-Sub                        header                string                                true        "Acting admin's Auth0 sub, for audit attribution"
+//        @Param                        id                                                        path                string                                true        "Banner ID"
+//        @Param                        banner                                                body                updateBannerRequest        true        "Updated banner message"
+//        @Success                200                                                        {object}        models.BannerMessage
+//        @Failure                400                                                        {object}        apiv.ErrorVO
+//        @Failure                401                                                        {object}        apiv.ErrorVO
+//        @Failure                404                                                        {object}        apiv.ErrorVO
+//        @Failure                500                                                        {object}        apiv.ErrorVO
 //        @Router                        /banners/{id} [put]
 func updateBanner(c *gin.Context) <span class="cov0" title="0">{
         id, err := primitive.ObjectIDFromHex(c.Param("id"))
@@ -1155,38 +1354,58 @@ func updateBanner(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "update_banner", id.Hex(), updated.Message)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to update banner"})
+                return
+        }</span>
+
         <span class="cov0" title="0">_, span := otel.Tracer("banners").Start(c.Request.Context(), "update-banner",
                 oteltrace.WithAttributes(attribute.String("id", id.Hex())))
         matched, _, err := database.Update(constants.BannerCollection, id, updated)
         span.End()
         if err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to update banner", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
                 c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "update_failed", Message: "failed to update banner"})
                 return
         }</span>
         <span class="cov0" title="0">if matched == 0 </span><span class="cov0" title="0">{
+                completeAudit(auditID, models.AuditFailed, "banner not found")
                 c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "banner not found"})
                 return
         }</span>
+        <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
 
-        <span class="cov0" title="0">c.JSON(http.StatusOK, updated)</span>
+        c.JSON(http.StatusOK, updated)</span>
 }
 
 // Delete a banner message.
 //
 //        @Summary                Delete a banner message
-//        @Description        Deletes a banner message; it is immediately excluded from subsequent queries.
+//        @Description        Deletes a banner message; it is immediately excluded from subsequent queries. Requires internal-service write auth.
 //        @Tags                        banners
-//        @Param                        id        path        string        true        "Banner ID"
-//        @Success                204        {object}        interface{}
-//        @Failure                400        {object}        apiv.ErrorVO
-//        @Failure                404        {object}        apiv.ErrorVO
-//        @Failure                500        {object}        apiv.ErrorVO
+//        @Param                        X-Internal-Service-Token        header        string        true        "Shared internal-service secret"
+//        @Param                        X-Acting-User-Sub                        header        string        true        "Acting admin's Auth0 sub, for audit attribution"
+//        @Param                        id                                                        path        string        true        "Banner ID"
+//        @Success                204                                                        {object}        interface{}
+//        @Failure                400                                                        {object}        apiv.ErrorVO
+//        @Failure                401                                                        {object}        apiv.ErrorVO
+//        @Failure                404                                                        {object}        apiv.ErrorVO
+//        @Failure                500                                                        {object}        apiv.ErrorVO
 //        @Router                        /banners/{id} [delete]
 func deleteBanner(c *gin.Context) <span class="cov0" title="0">{
         id, err := primitive.ObjectIDFromHex(c.Param("id"))
         if err != nil </span><span class="cov0" title="0">{
                 c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_id", Message: "id must be a valid object id"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "delete_banner", id.Hex(), "")
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to delete banner"})
                 return
         }</span>
 
@@ -1196,15 +1415,18 @@ func deleteBanner(c *gin.Context) <span class="cov0" title="0">{
         span.End()
         if err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to delete banner", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
                 c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "delete_failed", Message: "failed to delete banner"})
                 return
         }</span>
         <span class="cov0" title="0">if !deleted </span><span class="cov0" title="0">{
+                completeAudit(auditID, models.AuditFailed, "banner not found")
                 c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "banner not found"})
                 return
         }</span>
+        <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
 
-        <span class="cov0" title="0">c.Status(http.StatusNoContent)</span>
+        c.Status(http.StatusNoContent)</span>
 }
 
 // parseScope splits a "type" or "type:value" scope query param into its parts.
@@ -1220,19 +1442,68 @@ func parseScope(raw string) (models.ScopeType, string) <span class="cov10" title
 }
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package server
+		<pre class="file" id="file5" style="display: none">package server
 
 import (
         "github.com/gin-gonic/gin"
 )
 
-func SetupHandlers(g *gin.Engine) <span class="cov0" title="0">{
+func SetupHandlers(g *gin.Engine) <span class="cov8" title="1">{
         setupBannerHandlers(g)
         setupStatusHandlers(g)
 }</span>
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package server
+		<pre class="file" id="file6" style="display: none">// Package middleware provides Gin middleware for admin-api's route groups.
+package middleware
+
+import (
+        "crypto/subtle"
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/constants"
+        apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/common.go/util"
+)
+
+const (
+        internalServiceTokenHeader = "X-Internal-Service-Token"
+        actingUserSubHeader        = "X-Acting-User-Sub"
+
+        // ActingUserSubKey is the gin.Context key write handlers read to get the
+        // attributed acting user after WriteAuth has validated the request.
+        ActingUserSubKey = "actingUserSub"
+)
+
+// WriteAuth requires a valid X-Internal-Service-Token header (compared
+// constant-time against INTERNAL_SERVICE_TOKEN) and a non-empty
+// X-Acting-User-Sub header, matching users-api's InternalServiceAuth contract
+// for the same caller (admin-web). An unset or empty INTERNAL_SERVICE_TOKEN
+// permanently disables the write path rather than trusting an empty token.
+// On success, the acting user is stashed on the context under
+// ActingUserSubKey for handlers to attribute their audit records to.
+func WriteAuth() gin.HandlerFunc <span class="cov10" title="5">{
+        return func(c *gin.Context) </span><span class="cov10" title="5">{
+                expected := util.GetEnv(constants.INTERNAL_SERVICE_TOKEN, "")
+                presented := c.GetHeader(internalServiceTokenHeader)
+                actingUserSub := c.GetHeader(actingUserSubHeader)
+
+                if expected == "" || subtle.ConstantTimeCompare([]byte(expected), []byte(presented)) != 1 || actingUserSub == "" </span><span class="cov8" title="4">{
+                        c.AbortWithStatusJSON(http.StatusUnauthorized, apiv.ErrorVO{
+                                Error:   "unauthorized",
+                                Message: "missing or invalid internal service credentials",
+                        })
+                        return
+                }</span>
+
+                <span class="cov1" title="1">c.Set(ActingUserSubKey, actingUserSub)
+                c.Next()</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package server
 
 import (
         "net/http"
@@ -1243,16 +1514,16 @@ import (
         "github.com/sweetrpg/common.go/logging"
 )
 
-func setupStatusHandlers(g *gin.Engine) <span class="cov0" title="0">{
+func setupStatusHandlers(g *gin.Engine) <span class="cov8" title="1">{
         logging.Logger.Info("Setting up status endpoint handlers...")
 
-        </span><span class="cov0" title="0">{
+        </span><span class="cov8" title="1">{
                 a := g.Group("/status")
                 // TODO: a.Use()
                 a.GET("/health", healthHandler)
         }</span>
 
-        <span class="cov0" title="0">g.GET("/status/ping", pingHandler)</span>
+        <span class="cov8" title="1">g.GET("/status/ping", pingHandler)</span>
 }
 
 // Health check.
