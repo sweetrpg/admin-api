@@ -1,6 +1,13 @@
 
 ## 0.1.0 - 2026-08-01
 
+### Fixed
+- Point local overlay at the shared local MongoDB
+
+
+
+## 0.1.0 - 2026-08-01
+
 ### Added
 - Wire api-core.go tracing, health checks, and logging
 - Add BannerMessage model with validation and TTL index
