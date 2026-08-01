@@ -77,7 +77,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a new admin banner message. expires_at is required; a banner without one is rejected.",
+                "description": "Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires internal-service write auth.",
                 "consumes": [
                     "application/json"
                 ],
@@ -89,6 +89,20 @@ const docTemplate = `{
                 ],
                 "summary": "Create a banner message",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shared internal-service secret",
+                        "name": "X-Internal-Service-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acting admin's Auth0 sub, for audit attribution",
+                        "name": "X-Acting-User-Sub",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "description": "Banner message",
                         "name": "banner",
@@ -112,6 +126,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/vo.ErrorVO"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -123,7 +143,7 @@ const docTemplate = `{
         },
         "/banners/{id}": {
             "put": {
-                "description": "Replaces the mutable fields of an existing banner message. expires_at is required.",
+                "description": "Replaces the mutable fields of an existing banner message. expires_at is required. Requires internal-service write auth.",
                 "consumes": [
                     "application/json"
                 ],
@@ -135,6 +155,20 @@ const docTemplate = `{
                 ],
                 "summary": "Update a banner message",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shared internal-service secret",
+                        "name": "X-Internal-Service-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acting admin's Auth0 sub, for audit attribution",
+                        "name": "X-Acting-User-Sub",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "description": "Banner ID",
@@ -165,6 +199,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/vo.ErrorVO"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -180,12 +220,26 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Deletes a banner message; it is immediately excluded from subsequent queries.",
+                "description": "Deletes a banner message; it is immediately excluded from subsequent queries. Requires internal-service write auth.",
                 "tags": [
                     "banners"
                 ],
                 "summary": "Delete a banner message",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shared internal-service secret",
+                        "name": "X-Internal-Service-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acting admin's Auth0 sub, for audit attribution",
+                        "name": "X-Acting-User-Sub",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "description": "Banner ID",
@@ -201,6 +255,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/vo.ErrorVO"
                         }

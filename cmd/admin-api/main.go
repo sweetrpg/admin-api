@@ -62,6 +62,8 @@ func main() {
 	// CORS
 	setupCORS(r)
 
+	checkWriteAuthConfig()
+
 	// Setup Prometheus metrics
 	setupMetrics(r)
 
@@ -70,6 +72,9 @@ func main() {
 
 	if err := models.EnsureIndexes(context.Background()); err != nil {
 		logging.Logger.Error("Failed to ensure indexes", "error", err.Error())
+	}
+	if err := models.EnsureAuditIndexes(context.Background()); err != nil {
+		logging.Logger.Error("Failed to ensure audit indexes", "error", err.Error())
 	}
 
 	// Actuator
@@ -95,6 +100,12 @@ func setupSwagger(r *gin.Engine) {
 	docs.SwaggerInfo.Schemes = strings.Split(util.GetEnv(apiconstants.INGRESS_SCHEMES, "http"), ",")
 	// swagger middleware to serve the API docs
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+}
+
+func checkWriteAuthConfig() {
+	if util.GetEnv(constants.INTERNAL_SERVICE_TOKEN, "") == "" {
+		logging.Logger.Warn("INTERNAL_SERVICE_TOKEN not set, all write routes will reject every request with 401")
+	}
 }
 
 func setupCORS(r *gin.Engine) {
