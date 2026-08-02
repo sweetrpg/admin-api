@@ -76,6 +76,9 @@ func main() {
 	if err := models.EnsureAuditIndexes(context.Background()); err != nil {
 		logging.Logger.Error("Failed to ensure audit indexes", "error", err.Error())
 	}
+	if err := models.EnsureMaintenanceModeIndexes(context.Background()); err != nil {
+		logging.Logger.Error("Failed to ensure maintenance-mode indexes", "error", err.Error())
+	}
 
 	// Actuator
 	setupAcuator(r)

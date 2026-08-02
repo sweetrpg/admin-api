@@ -18,6 +18,10 @@ const (
 	// BannerCollection is the MongoDB collection name for banner messages.
 	BannerCollection = "banners"
 
+	// MaintenanceModeCollection is the MongoDB collection name for maintenance-mode
+	// records.
+	MaintenanceModeCollection = "maintenance_modes"
+
 	// AdminActionAuditLogCollection is the MongoDB collection name for write-route
 	// audit records.
 	AdminActionAuditLogCollection = "admin_action_audit_logs"

@@ -280,6 +280,292 @@ const docTemplate = `{
                 }
             }
         },
+        "/maintenance-modes": {
+            "get": {
+                "description": "Returns every maintenance-mode record (platform and every known service scope) regardless of enabled state, for admin-web's management view.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "List maintenance-mode records",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.MaintenanceMode"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a maintenance-mode record for the given scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires internal-service write auth.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "Create or update a maintenance-mode record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shared internal-service secret",
+                        "name": "X-Internal-Service-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acting admin's Auth0 sub, for audit attribution",
+                        "name": "X-Acting-User-Sub",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Maintenance-mode record",
+                        "name": "maintenance_mode",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.maintenanceModeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MaintenanceMode"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.MaintenanceMode"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/maintenance-modes/active": {
+            "get": {
+                "description": "Returns enabled maintenance-mode records matching any of the requested scopes; platform-scoped records are always included. scope values look like \"platform\" or \"service:catalog\".",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "List active maintenance-mode records for a set of scopes",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Repeated scope filter, e.g. scope=platform\u0026scope=service:catalog",
+                        "name": "scope",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.MaintenanceMode"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/maintenance-modes/{id}": {
+            "put": {
+                "description": "Replaces the mutable fields of an existing maintenance-mode record. Requires internal-service write auth.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "Update a maintenance-mode record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shared internal-service secret",
+                        "name": "X-Internal-Service-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acting admin's Auth0 sub, for audit attribution",
+                        "name": "X-Acting-User-Sub",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Maintenance-mode record ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated maintenance-mode record",
+                        "name": "maintenance_mode",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.maintenanceModeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MaintenanceMode"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a maintenance-mode record; it is immediately excluded from subsequent queries. Requires internal-service write auth.",
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "Delete a maintenance-mode record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shared internal-service secret",
+                        "name": "X-Internal-Service-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acting admin's Auth0 sub, for audit attribution",
+                        "name": "X-Acting-User-Sub",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Maintenance-mode record ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {}
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
         "/status/health": {
             "get": {
                 "description": "Health check",
@@ -357,6 +643,52 @@ const docTemplate = `{
                 }
             }
         },
+        "models.MaintenanceMode": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "scope_type": {
+                    "$ref": "#/definitions/models.MaintenanceScopeType"
+                },
+                "scope_value": {
+                    "type": "string"
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MaintenanceScopeType": {
+            "type": "string",
+            "enum": [
+                "platform",
+                "service"
+            ],
+            "x-enum-varnames": [
+                "MaintenanceScopePlatform",
+                "MaintenanceScopeService"
+            ]
+        },
         "models.ScopeType": {
             "type": "string",
             "enum": [
@@ -410,6 +742,38 @@ const docTemplate = `{
                 },
                 "severity": {
                     "$ref": "#/definitions/models.Severity"
+                },
+                "starts_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.maintenanceModeRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "label",
+                "scope_type",
+                "starts_at"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "scope_type": {
+                    "$ref": "#/definitions/models.MaintenanceScopeType"
+                },
+                "scope_value": {
+                    "type": "string"
                 },
                 "starts_at": {
                     "type": "string"
