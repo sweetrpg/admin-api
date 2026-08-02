@@ -22,3 +22,6 @@ spec:
                 name: api-v1
                 port:
                   name: http
+  tls:
+    - hosts:
+        - dev.sweetrpg.com
