@@ -63,13 +63,17 @@
 				
 				<option value="file3">github.com/sweetrpg/admin-api/models/banner.go (88.9%)</option>
 				
-				<option value="file4">github.com/sweetrpg/admin-api/server/banners.go (12.0%)</option>
+				<option value="file4">github.com/sweetrpg/admin-api/models/maintenance_mode.go (85.7%)</option>
 				
-				<option value="file5">github.com/sweetrpg/admin-api/server/handlers.go (100.0%)</option>
+				<option value="file5">github.com/sweetrpg/admin-api/server/banners.go (12.0%)</option>
 				
-				<option value="file6">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (100.0%)</option>
+				<option value="file6">github.com/sweetrpg/admin-api/server/handlers.go (100.0%)</option>
 				
-				<option value="file7">github.com/sweetrpg/admin-api/server/status.go (45.5%)</option>
+				<option value="file7">github.com/sweetrpg/admin-api/server/maintenance_modes.go (14.5%)</option>
+				
+				<option value="file8">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (100.0%)</option>
+				
+				<option value="file9">github.com/sweetrpg/admin-api/server/status.go (45.5%)</option>
 				
 				</select>
 			</div>
@@ -169,6 +173,9 @@ func main() <span class="cov0" title="0">{
         }</span>
         <span class="cov0" title="0">if err := models.EnsureAuditIndexes(context.Background()); err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to ensure audit indexes", "error", err.Error())
+        }</span>
+        <span class="cov0" title="0">if err := models.EnsureMaintenanceModeIndexes(context.Background()); err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to ensure maintenance-mode indexes", "error", err.Error())
         }</span>
 
         // Actuator
@@ -618,6 +625,292 @@ const docTemplate = `{
                 }
             }
         },
+        "/maintenance-modes": {
+            "get": {
+                "description": "Returns every maintenance-mode record (platform and every known service scope) regardless of enabled state, for admin-web's management view.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "List maintenance-mode records",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.MaintenanceMode"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a maintenance-mode record for the given scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires internal-service write auth.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "Create or update a maintenance-mode record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shared internal-service secret",
+                        "name": "X-Internal-Service-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acting admin's Auth0 sub, for audit attribution",
+                        "name": "X-Acting-User-Sub",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Maintenance-mode record",
+                        "name": "maintenance_mode",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.maintenanceModeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MaintenanceMode"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.MaintenanceMode"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/maintenance-modes/active": {
+            "get": {
+                "description": "Returns enabled maintenance-mode records matching any of the requested scopes; platform-scoped records are always included. scope values look like \"platform\" or \"service:catalog\".",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "List active maintenance-mode records for a set of scopes",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Repeated scope filter, e.g. scope=platform\u0026scope=service:catalog",
+                        "name": "scope",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.MaintenanceMode"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/maintenance-modes/{id}": {
+            "put": {
+                "description": "Replaces the mutable fields of an existing maintenance-mode record. Requires internal-service write auth.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "Update a maintenance-mode record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shared internal-service secret",
+                        "name": "X-Internal-Service-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acting admin's Auth0 sub, for audit attribution",
+                        "name": "X-Acting-User-Sub",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Maintenance-mode record ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated maintenance-mode record",
+                        "name": "maintenance_mode",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.maintenanceModeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MaintenanceMode"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a maintenance-mode record; it is immediately excluded from subsequent queries. Requires internal-service write auth.",
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "Delete a maintenance-mode record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shared internal-service secret",
+                        "name": "X-Internal-Service-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Acting admin's Auth0 sub, for audit attribution",
+                        "name": "X-Acting-User-Sub",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Maintenance-mode record ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {}
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
         "/status/health": {
             "get": {
                 "description": "Health check",
@@ -695,6 +988,52 @@ const docTemplate = `{
                 }
             }
         },
+        "models.MaintenanceMode": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "scope_type": {
+                    "$ref": "#/definitions/models.MaintenanceScopeType"
+                },
+                "scope_value": {
+                    "type": "string"
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MaintenanceScopeType": {
+            "type": "string",
+            "enum": [
+                "platform",
+                "service"
+            ],
+            "x-enum-varnames": [
+                "MaintenanceScopePlatform",
+                "MaintenanceScopeService"
+            ]
+        },
         "models.ScopeType": {
             "type": "string",
             "enum": [
@@ -748,6 +1087,38 @@ const docTemplate = `{
                 },
                 "severity": {
                     "$ref": "#/definitions/models.Severity"
+                },
+                "starts_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.maintenanceModeRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "label",
+                "scope_type",
+                "starts_at"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "scope_type": {
+                    "$ref": "#/definitions/models.MaintenanceScopeType"
+                },
+                "scope_value": {
+                    "type": "string"
                 },
                 "starts_at": {
                     "type": "string"
@@ -1081,7 +1452,101 @@ func EnsureIndexes(ctx context.Context) error <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package server
+		<pre class="file" id="file4" style="display: none">package models
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/bson/primitive"
+        "go.mongodb.org/mongo-driver/mongo"
+        "go.mongodb.org/mongo-driver/mongo/options"
+)
+
+// MaintenanceScopeType identifies what a maintenance-mode record applies to. Unlike
+// BannerMessage's ScopeType, maintenance mode has no page scope - it's app/platform
+// granularity only.
+type MaintenanceScopeType string
+
+const (
+        MaintenanceScopePlatform MaintenanceScopeType = "platform"
+        MaintenanceScopeService  MaintenanceScopeType = "service"
+)
+
+func (s MaintenanceScopeType) valid() bool <span class="cov10" title="10">{
+        switch s </span>{
+        case MaintenanceScopePlatform, MaintenanceScopeService:<span class="cov9" title="9">
+                return true</span>
+        default:<span class="cov1" title="1">
+                return false</span>
+        }
+}
+
+// MaintenanceMode is the MongoDB document for a platform-wide or service-scoped
+// maintenance state. Unlike BannerMessage, it's a durable on/off record - one per
+// scope, edited in place rather than accumulated - with enabled as the explicit gate;
+// starts_at/ends_at are informational for display only.
+type MaintenanceMode struct {
+        ID          primitive.ObjectID   `bson:"_id,omitempty" json:"id"`
+        ScopeType   MaintenanceScopeType `bson:"scope_type" json:"scope_type"`
+        ScopeValue  string               `bson:"scope_value" json:"scope_value"`
+        Enabled     bool                 `bson:"enabled" json:"enabled"`
+        StartsAt    time.Time            `bson:"starts_at" json:"starts_at"`
+        EndsAt      *time.Time           `bson:"ends_at,omitempty" json:"ends_at,omitempty"`
+        Label       string               `bson:"label" json:"label"`
+        Description string               `bson:"description" json:"description"`
+        CreatedAt   time.Time            `bson:"created_at" json:"created_at"`
+        UpdatedAt   time.Time            `bson:"updated_at" json:"updated_at"`
+}
+
+// Validate checks that the record satisfies the invariants required by the spec: a
+// known scope type, a scope value present exactly when the scope requires one, a
+// required starts_at, and required label/description.
+func (m *MaintenanceMode) Validate() error <span class="cov10" title="10">{
+        if !m.ScopeType.valid() </span><span class="cov1" title="1">{
+                return errors.New("scope_type must be one of: platform, service")
+        }</span>
+        <span class="cov9" title="9">if m.ScopeType == MaintenanceScopePlatform &amp;&amp; m.ScopeValue != "" </span><span class="cov1" title="1">{
+                return errors.New("scope_value must be empty for platform scope")
+        }</span>
+        <span class="cov9" title="8">if m.ScopeType == MaintenanceScopeService &amp;&amp; m.ScopeValue == "" </span><span class="cov1" title="1">{
+                return errors.New("scope_value is required for service scope")
+        }</span>
+        <span class="cov8" title="7">if m.StartsAt.IsZero() </span><span class="cov1" title="1">{
+                return errors.New("starts_at is required")
+        }</span>
+        <span class="cov8" title="6">if m.Label == "" </span><span class="cov1" title="1">{
+                return errors.New("label is required")
+        }</span>
+        <span class="cov7" title="5">if m.Description == "" </span><span class="cov1" title="1">{
+                return errors.New("description is required")
+        }</span>
+        <span class="cov6" title="4">if m.EndsAt != nil &amp;&amp; m.EndsAt.Before(m.StartsAt) </span><span class="cov1" title="1">{
+                return errors.New("ends_at must be after starts_at")
+        }</span>
+        <span class="cov5" title="3">return nil</span>
+}
+
+// EnsureMaintenanceModeIndexes creates a unique compound index on (scope_type,
+// scope_value) so at most one record exists per scope - a create for an existing
+// scope updates in place instead of accumulating duplicates. Safe to call on every
+// startup - CreateOne is idempotent for an identical index definition.
+func EnsureMaintenanceModeIndexes(ctx context.Context) error <span class="cov0" title="0">{
+        collection := database.Db.Collection(constants.MaintenanceModeCollection)
+
+        _, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+                Keys:    bson.D{{Key: "scope_type", Value: 1}, {Key: "scope_value", Value: 1}},
+                Options: options.Index().SetUnique(true),
+        })
+        return err
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package server
 
 import (
         "net/http"
@@ -1442,7 +1907,7 @@ func parseScope(raw string) (models.ScopeType, string) <span class="cov10" title
 }
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package server
+		<pre class="file" id="file6" style="display: none">package server
 
 import (
         "github.com/gin-gonic/gin"
@@ -1450,11 +1915,404 @@ import (
 
 func SetupHandlers(g *gin.Engine) <span class="cov8" title="1">{
         setupBannerHandlers(g)
+        setupMaintenanceModeHandlers(g)
         setupStatusHandlers(g)
 }</span>
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">// Package middleware provides Gin middleware for admin-api's route groups.
+		<pre class="file" id="file7" style="display: none">package server
+
+import (
+        "net/http"
+        "strings"
+        "time"
+
+        "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/admin-api/models"
+        "github.com/sweetrpg/admin-api/server/middleware"
+        apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/common.go/logging"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/bson/primitive"
+        "go.opentelemetry.io/otel"
+        "go.opentelemetry.io/otel/attribute"
+        oteltrace "go.opentelemetry.io/otel/trace"
+)
+
+func setupMaintenanceModeHandlers(g *gin.Engine) <span class="cov1" title="1">{
+        logging.Logger.Info("Setting up maintenance-mode endpoint handlers...")
+
+        g.GET("/maintenance-modes", listMaintenanceModes)
+        g.GET("/maintenance-modes/active", listActiveMaintenanceModes)
+
+        writes := g.Group("/maintenance-modes", middleware.WriteAuth())
+        writes.POST("", createMaintenanceMode)
+        writes.PUT("/:id", updateMaintenanceMode)
+        writes.DELETE("/:id", deleteMaintenanceMode)
+}</span>
+
+// maintenanceModeRequest is the payload accepted by POST /maintenance-modes and
+// PUT /maintenance-modes/:id.
+type maintenanceModeRequest struct {
+        ScopeType   models.MaintenanceScopeType `json:"scope_type" binding:"required"`
+        ScopeValue  string                      `json:"scope_value"`
+        Enabled     bool                        `json:"enabled"`
+        StartsAt    time.Time                   `json:"starts_at" binding:"required"`
+        EndsAt      *time.Time                  `json:"ends_at"`
+        Label       string                      `json:"label" binding:"required"`
+        Description string                      `json:"description" binding:"required"`
+}
+
+// Create or update a maintenance-mode record for a scope.
+//
+//        @Summary                Create or update a maintenance-mode record
+//        @Description        Creates a maintenance-mode record for the given scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires internal-service write auth.
+//        @Tags                        maintenance-modes
+//        @Accept                        json
+//        @Produce                json
+//        @Param                        X-Internal-Service-Token        header                string                                        true        "Shared internal-service secret"
+//        @Param                        X-Acting-User-Sub                        header                string                                        true        "Acting admin's Auth0 sub, for audit attribution"
+//        @Param                        maintenance_mode                        body                maintenanceModeRequest        true        "Maintenance-mode record"
+//        @Success                200                                                        {object}        models.MaintenanceMode
+//        @Success                201                                                        {object}        models.MaintenanceMode
+//        @Failure                400                                                        {object}        apiv.ErrorVO
+//        @Failure                401                                                        {object}        apiv.ErrorVO
+//        @Failure                500                                                        {object}        apiv.ErrorVO
+//        @Router                        /maintenance-modes [post]
+func createMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
+        var req maintenanceModeRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">now := time.Now().UTC()
+        record := &amp;models.MaintenanceMode{
+                ScopeType:   req.ScopeType,
+                ScopeValue:  req.ScopeValue,
+                Enabled:     req.Enabled,
+                StartsAt:    req.StartsAt,
+                EndsAt:      req.EndsAt,
+                Label:       req.Label,
+                Description: req.Description,
+                CreatedAt:   now,
+                UpdatedAt:   now,
+        }
+
+        if err := record.Validate(); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "validation_failed", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "upsert_maintenance_mode", "", record.Label)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to save maintenance mode"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("maintenance-modes").Start(c.Request.Context(), "upsert-maintenance-mode",
+                oteltrace.WithAttributes(
+                        attribute.String("scope_type", string(record.ScopeType)),
+                        attribute.String("scope_value", record.ScopeValue)))
+        defer span.End()
+
+        existing, err := findMaintenanceModeByScope(record.ScopeType, record.ScopeValue)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to look up existing maintenance mode", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "lookup_failed", Message: "failed to save maintenance mode"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if existing != nil </span><span class="cov0" title="0">{
+                record.ID = existing.ID
+                record.CreatedAt = existing.CreatedAt
+                if _, _, err := database.Update(constants.MaintenanceModeCollection, record.ID, record); err != nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("Failed to update maintenance mode", "error", err.Error())
+                        completeAudit(auditID, models.AuditFailed, err.Error())
+                        c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "update_failed", Message: "failed to save maintenance mode"})
+                        return
+                }</span>
+                <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+                c.JSON(http.StatusOK, record)
+                return</span>
+        }
+
+        <span class="cov0" title="0">id, err := database.Insert(constants.MaintenanceModeCollection, record)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to insert maintenance mode", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "insert_failed", Message: "failed to save maintenance mode"})
+                return
+        }</span>
+        <span class="cov0" title="0">record.ID = id
+        completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.JSON(http.StatusCreated, record)</span>
+}
+
+// findMaintenanceModeByScope returns the existing record for a scope, or nil if none
+// exists.
+func findMaintenanceModeByScope(scopeType models.MaintenanceScopeType, scopeValue string) (*models.MaintenanceMode, error) <span class="cov0" title="0">{
+        filter := bson.D{
+                {Key: "scope_type", Value: scopeType},
+                {Key: "scope_value", Value: scopeValue},
+        }
+        records, err := database.Query[models.MaintenanceMode](constants.MaintenanceModeCollection, filter, nil, nil, 0, 1)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if len(records) == 0 </span><span class="cov0" title="0">{
+                return nil, nil
+        }</span>
+        <span class="cov0" title="0">return records[0], nil</span>
+}
+
+// List every maintenance-mode record, for the admin management view.
+//
+//        @Summary                List maintenance-mode records
+//        @Description        Returns every maintenance-mode record (platform and every known service scope) regardless of enabled state, for admin-web's management view.
+//        @Tags                        maintenance-modes
+//        @Produce                json
+//        @Success                200        {array}                models.MaintenanceMode
+//        @Failure                500        {object}        apiv.ErrorVO
+//        @Router                        /maintenance-modes [get]
+func listMaintenanceModes(c *gin.Context) <span class="cov0" title="0">{
+        _, span := otel.Tracer("maintenance-modes").Start(c.Request.Context(), "list-maintenance-modes")
+        records, err := database.Query[models.MaintenanceMode](constants.MaintenanceModeCollection, bson.D{}, nil, nil, 0, 1000)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to query maintenance modes", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "query_failed", Message: "failed to list maintenance modes"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if records == nil </span><span class="cov0" title="0">{
+                records = []*models.MaintenanceMode{}
+        }</span>
+        <span class="cov0" title="0">c.JSON(http.StatusOK, records)</span>
+}
+
+// List active (enabled) maintenance-mode records matching the requested scopes, for
+// consuming frontends.
+//
+//        @Summary                List active maintenance-mode records for a set of scopes
+//        @Description        Returns enabled maintenance-mode records matching any of the requested scopes; platform-scoped records are always included. scope values look like "platform" or "service:catalog".
+//        @Tags                        maintenance-modes
+//        @Produce                json
+//        @Param                        scope        query                []string        true        "Repeated scope filter, e.g. scope=platform&amp;scope=service:catalog"
+//        @Success                200                {array}                models.MaintenanceMode
+//        @Failure                400                {object}        apiv.ErrorVO
+//        @Failure                500                {object}        apiv.ErrorVO
+//        @Router                        /maintenance-modes/active [get]
+func listActiveMaintenanceModes(c *gin.Context) <span class="cov0" title="0">{
+        scopes := c.QueryArray("scope")
+        if len(scopes) == 0 </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "missing_scope", Message: "at least one scope query param is required"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">filter := buildActiveMaintenanceModeFilter(scopes)
+
+        _, span := otel.Tracer("maintenance-modes").Start(c.Request.Context(), "list-active-maintenance-modes",
+                oteltrace.WithAttributes(attribute.StringSlice("scope", scopes)))
+        records, err := database.Query[models.MaintenanceMode](constants.MaintenanceModeCollection, filter, nil, nil, 0, 1000)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to query active maintenance modes", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "query_failed", Message: "failed to list active maintenance modes"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if records == nil </span><span class="cov0" title="0">{
+                records = []*models.MaintenanceMode{}
+        }</span>
+        <span class="cov0" title="0">c.JSON(http.StatusOK, records)</span>
+}
+
+// Update a maintenance-mode record by id.
+//
+//        @Summary                Update a maintenance-mode record
+//        @Description        Replaces the mutable fields of an existing maintenance-mode record. Requires internal-service write auth.
+//        @Tags                        maintenance-modes
+//        @Accept                        json
+//        @Produce                json
+//        @Param                        X-Internal-Service-Token        header                string                                        true        "Shared internal-service secret"
+//        @Param                        X-Acting-User-Sub                        header                string                                        true        "Acting admin's Auth0 sub, for audit attribution"
+//        @Param                        id                                                        path                string                                        true        "Maintenance-mode record ID"
+//        @Param                        maintenance_mode                        body                maintenanceModeRequest        true        "Updated maintenance-mode record"
+//        @Success                200                                                        {object}        models.MaintenanceMode
+//        @Failure                400                                                        {object}        apiv.ErrorVO
+//        @Failure                401                                                        {object}        apiv.ErrorVO
+//        @Failure                404                                                        {object}        apiv.ErrorVO
+//        @Failure                500                                                        {object}        apiv.ErrorVO
+//        @Router                        /maintenance-modes/{id} [put]
+func updateMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
+        id, err := primitive.ObjectIDFromHex(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_id", Message: "id must be a valid object id"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">var req maintenanceModeRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">existing, err := database.Get[models.MaintenanceMode](constants.MaintenanceModeCollection, id)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to look up maintenance mode", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "lookup_failed", Message: "failed to look up maintenance mode"})
+                return
+        }</span>
+        <span class="cov0" title="0">if existing == nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "maintenance mode not found"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">updated := &amp;models.MaintenanceMode{
+                ID:          id,
+                ScopeType:   req.ScopeType,
+                ScopeValue:  req.ScopeValue,
+                Enabled:     req.Enabled,
+                StartsAt:    req.StartsAt,
+                EndsAt:      req.EndsAt,
+                Label:       req.Label,
+                Description: req.Description,
+                CreatedAt:   existing.CreatedAt,
+                UpdatedAt:   time.Now().UTC(),
+        }
+
+        if err := updated.Validate(); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "validation_failed", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "update_maintenance_mode", id.Hex(), updated.Label)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to update maintenance mode"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("maintenance-modes").Start(c.Request.Context(), "update-maintenance-mode",
+                oteltrace.WithAttributes(attribute.String("id", id.Hex())))
+        matched, _, err := database.Update(constants.MaintenanceModeCollection, id, updated)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to update maintenance mode", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "update_failed", Message: "failed to update maintenance mode"})
+                return
+        }</span>
+        <span class="cov0" title="0">if matched == 0 </span><span class="cov0" title="0">{
+                completeAudit(auditID, models.AuditFailed, "maintenance mode not found")
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "maintenance mode not found"})
+                return
+        }</span>
+        <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.JSON(http.StatusOK, updated)</span>
+}
+
+// Delete a maintenance-mode record.
+//
+//        @Summary                Delete a maintenance-mode record
+//        @Description        Deletes a maintenance-mode record; it is immediately excluded from subsequent queries. Requires internal-service write auth.
+//        @Tags                        maintenance-modes
+//        @Param                        X-Internal-Service-Token        header        string        true        "Shared internal-service secret"
+//        @Param                        X-Acting-User-Sub                        header        string        true        "Acting admin's Auth0 sub, for audit attribution"
+//        @Param                        id                                                        path        string        true        "Maintenance-mode record ID"
+//        @Success                204                                                        {object}        interface{}
+//        @Failure                400                                                        {object}        apiv.ErrorVO
+//        @Failure                401                                                        {object}        apiv.ErrorVO
+//        @Failure                404                                                        {object}        apiv.ErrorVO
+//        @Failure                500                                                        {object}        apiv.ErrorVO
+//        @Router                        /maintenance-modes/{id} [delete]
+func deleteMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
+        id, err := primitive.ObjectIDFromHex(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_id", Message: "id must be a valid object id"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "delete_maintenance_mode", id.Hex(), "")
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to delete maintenance mode"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("maintenance-modes").Start(c.Request.Context(), "delete-maintenance-mode",
+                oteltrace.WithAttributes(attribute.String("id", id.Hex())))
+        deleted, err := database.Delete[models.MaintenanceMode](constants.MaintenanceModeCollection, id)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to delete maintenance mode", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "delete_failed", Message: "failed to delete maintenance mode"})
+                return
+        }</span>
+        <span class="cov0" title="0">if !deleted </span><span class="cov0" title="0">{
+                completeAudit(auditID, models.AuditFailed, "maintenance mode not found")
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "maintenance mode not found"})
+                return
+        }</span>
+        <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.Status(http.StatusNoContent)</span>
+}
+
+// extractServiceScopeValues returns the service names from a list of "service:&lt;name&gt;"
+// scope query params, ignoring "platform" and any other scope type.
+func extractServiceScopeValues(scopes []string) []string <span class="cov8" title="7">{
+        var serviceValues []string
+        for _, raw := range scopes </span><span class="cov9" title="9">{
+                scopeType, scopeValue := parseMaintenanceScope(raw)
+                if scopeType == models.MaintenanceScopeService &amp;&amp; scopeValue != "" </span><span class="cov7" title="5">{
+                        serviceValues = append(serviceValues, scopeValue)
+                }</span>
+        }
+        <span class="cov8" title="7">return serviceValues</span>
+}
+
+// buildActiveMaintenanceModeFilter builds the Mongo filter for enabled records
+// matching any of the requested scopes; platform-scoped records are always included.
+func buildActiveMaintenanceModeFilter(scopes []string) bson.D <span class="cov5" title="3">{
+        serviceValues := extractServiceScopeValues(scopes)
+
+        scopeOr := bson.A{bson.D{{Key: "scope_type", Value: models.MaintenanceScopePlatform}}}
+        if len(serviceValues) &gt; 0 </span><span class="cov1" title="1">{
+                scopeOr = append(scopeOr, bson.D{
+                        {Key: "scope_type", Value: models.MaintenanceScopeService},
+                        {Key: "scope_value", Value: bson.D{{Key: "$in", Value: serviceValues}}},
+                })
+        }</span>
+
+        <span class="cov5" title="3">return bson.D{
+                {Key: "enabled", Value: true},
+                {Key: "$or", Value: scopeOr},
+        }</span>
+}
+
+// parseMaintenanceScope splits a "type" or "type:value" scope query param into its
+// parts. An unrecognized type is passed through as-is and matched against nothing,
+// since the filter builder only special-cases service.
+func parseMaintenanceScope(raw string) (models.MaintenanceScopeType, string) <span class="cov10" title="11">{
+        parts := strings.SplitN(raw, ":", 2)
+        scopeType := models.MaintenanceScopeType(parts[0])
+        if len(parts) == 2 </span><span class="cov7" title="6">{
+                return scopeType, parts[1]
+        }</span>
+        <span class="cov7" title="5">return scopeType, ""</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">// Package middleware provides Gin middleware for admin-api's route groups.
 package middleware
 
 import (
@@ -1503,7 +2361,7 @@ func WriteAuth() gin.HandlerFunc <span class="cov10" title="5">{
 }
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package server
+		<pre class="file" id="file9" style="display: none">package server
 
 import (
         "net/http"
