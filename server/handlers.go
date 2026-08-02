@@ -6,5 +6,6 @@ import (
 
 func SetupHandlers(g *gin.Engine) {
 	setupBannerHandlers(g)
+	setupMaintenanceModeHandlers(g)
 	setupStatusHandlers(g)
 }

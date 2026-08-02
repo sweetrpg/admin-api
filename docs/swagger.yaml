@@ -22,6 +22,37 @@ definitions:
       updated_at:
         type: string
     type: object
+  models.MaintenanceMode:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      ends_at:
+        type: string
+      id:
+        type: string
+      label:
+        type: string
+      scope_type:
+        $ref: '#/definitions/models.MaintenanceScopeType'
+      scope_value:
+        type: string
+      starts_at:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.MaintenanceScopeType:
+    enum:
+    - platform
+    - service
+    type: string
+    x-enum-varnames:
+    - MaintenanceScopePlatform
+    - MaintenanceScopeService
   models.ScopeType:
     enum:
     - platform
@@ -64,6 +95,28 @@ definitions:
     - message
     - scope_type
     - severity
+    type: object
+  server.maintenanceModeRequest:
+    properties:
+      description:
+        type: string
+      enabled:
+        type: boolean
+      ends_at:
+        type: string
+      label:
+        type: string
+      scope_type:
+        $ref: '#/definitions/models.MaintenanceScopeType'
+      scope_value:
+        type: string
+      starts_at:
+        type: string
+    required:
+    - description
+    - label
+    - scope_type
+    - starts_at
     type: object
   server.updateBannerRequest:
     properties:
@@ -311,6 +364,205 @@ paths:
       summary: Update a banner message
       tags:
       - banners
+  /maintenance-modes:
+    get:
+      description: Returns every maintenance-mode record (platform and every known
+        service scope) regardless of enabled state, for admin-web's management view.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.MaintenanceMode'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: List maintenance-mode records
+      tags:
+      - maintenance-modes
+    post:
+      consumes:
+      - application/json
+      description: Creates a maintenance-mode record for the given scope, or updates
+        the existing record for that scope in place if one already exists - at most
+        one record per scope is kept. Requires internal-service write auth.
+      parameters:
+      - description: Shared internal-service secret
+        in: header
+        name: X-Internal-Service-Token
+        required: true
+        type: string
+      - description: Acting admin's Auth0 sub, for audit attribution
+        in: header
+        name: X-Acting-User-Sub
+        required: true
+        type: string
+      - description: Maintenance-mode record
+        in: body
+        name: maintenance_mode
+        required: true
+        schema:
+          $ref: '#/definitions/server.maintenanceModeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MaintenanceMode'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.MaintenanceMode'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: Create or update a maintenance-mode record
+      tags:
+      - maintenance-modes
+  /maintenance-modes/{id}:
+    delete:
+      description: Deletes a maintenance-mode record; it is immediately excluded from
+        subsequent queries. Requires internal-service write auth.
+      parameters:
+      - description: Shared internal-service secret
+        in: header
+        name: X-Internal-Service-Token
+        required: true
+        type: string
+      - description: Acting admin's Auth0 sub, for audit attribution
+        in: header
+        name: X-Acting-User-Sub
+        required: true
+        type: string
+      - description: Maintenance-mode record ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema: {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: Delete a maintenance-mode record
+      tags:
+      - maintenance-modes
+    put:
+      consumes:
+      - application/json
+      description: Replaces the mutable fields of an existing maintenance-mode record.
+        Requires internal-service write auth.
+      parameters:
+      - description: Shared internal-service secret
+        in: header
+        name: X-Internal-Service-Token
+        required: true
+        type: string
+      - description: Acting admin's Auth0 sub, for audit attribution
+        in: header
+        name: X-Acting-User-Sub
+        required: true
+        type: string
+      - description: Maintenance-mode record ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated maintenance-mode record
+        in: body
+        name: maintenance_mode
+        required: true
+        schema:
+          $ref: '#/definitions/server.maintenanceModeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MaintenanceMode'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: Update a maintenance-mode record
+      tags:
+      - maintenance-modes
+  /maintenance-modes/active:
+    get:
+      description: Returns enabled maintenance-mode records matching any of the requested
+        scopes; platform-scoped records are always included. scope values look like
+        "platform" or "service:catalog".
+      parameters:
+      - collectionFormat: csv
+        description: Repeated scope filter, e.g. scope=platform&scope=service:catalog
+        in: query
+        items:
+          type: string
+        name: scope
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.MaintenanceMode'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: List active maintenance-mode records for a set of scopes
+      tags:
+      - maintenance-modes
   /status/health:
     get:
       description: Health check
