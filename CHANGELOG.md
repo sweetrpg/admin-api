@@ -1,4 +1,15 @@
 
+## 0.3.0 - 2026-08-02
+
+### Added
+- Add maintenance-mode resource
+
+
+### Fixed
+- Point local overlay at the shared local MongoDB
+
+
+
 ## 0.2.0 - 2026-08-01
 
 ### Added
