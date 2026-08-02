@@ -13,17 +13,13 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: api.admin.dev.sweetrpg.com
+    - host: dev.sweetrpg.com
       http:
         paths:
           - pathType: Prefix
-            path: /
+            path: /api/admin
             backend:
               service:
                 name: api-v1
                 port:
                   name: http
-  tls:
-    - hosts:
-        - api.admin.dev.sweetrpg.com
-      secretName: admin-api-v1-tls
