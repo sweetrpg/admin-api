@@ -1,6 +1,9 @@
 
 ## 0.3.0 - 2026-08-02
 
+
+## 0.3.0 - 2026-08-02
+
 ### Added
 - Add maintenance-mode resource
 
