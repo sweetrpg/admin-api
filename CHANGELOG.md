@@ -1,6 +1,9 @@
 
 ## 0.5.0 - 2026-08-05
 
+
+## 0.5.0 - 2026-08-05
+
 ### Added
 - Add Atlas user manifest
 
