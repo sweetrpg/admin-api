@@ -8,6 +8,15 @@ metadata:
 data:
   ENV: dev
   BUILD_INFO_PATH: /app/config/build-info.json
+  # mongodb.go builds the connection string from these DB_* parts rather than one opaque
+  # DB_URI - only the password (DB_PW, in secrets.yaml) is sensitive. DB_HOST is Atlas's own
+  # SRV hostname for Cluster0 - not secret, but also not derivable from anything else in this
+  # repo, so it's spelled out here rather than left to be rediscovered later.
+  DB_SCHEME: mongodb+srv
+  DB_HOST: cluster0.z9nxg.mongodb.net
+  DB_USER: admin-api
+  DB_NAME: sweetrpg-admin
+  DB_OPTS: retryWrites=true&w=majority
   OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo-distributor.observability.svc.cluster.local:4318/
   # PYROSCOPE_SERVER_ADDRESS: http://pyroscope.observability.svc.cluster.local:4040
   # PYROSCOPE_TENANT_ID: psw
