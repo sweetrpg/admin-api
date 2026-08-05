@@ -1,4 +1,11 @@
 
+## 0.4.0 - 2026-08-05
+
+### Added
+- Connect via admin-api's own Atlas database user
+
+
+
 ## 0.3.1 - 2026-08-05
 
 
