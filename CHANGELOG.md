@@ -1,4 +1,15 @@
 
+## 0.5.0 - 2026-08-05
+
+### Added
+- Add Atlas user manifest
+
+
+### Fixed
+- Point atlas-db-password ExternalSecrets at new Akeyless path/key
+
+
+
 ## 0.4.0 - 2026-08-05
 
 ### Added
