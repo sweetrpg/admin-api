@@ -143,6 +143,7 @@ jobs:
               run: |
                   docker buildx imagetools inspect ghcr.io/sweetrpg/admin-api:${{ needs.meta.outputs.build-version }}
             - name: Create Sentry release
+              if: github.ref_name != 'develop'
               uses: getsentry/action-release@v3
               env:
                   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
