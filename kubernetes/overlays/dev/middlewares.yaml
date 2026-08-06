@@ -8,5 +8,5 @@ metadata:
 spec:
   stripPrefix:
     prefixes:
-      - /api/admin/0
-      - /api/admin/1
+      - /api/0/admin
+      - /api/1/admin

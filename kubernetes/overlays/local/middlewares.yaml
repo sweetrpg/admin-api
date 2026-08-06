@@ -6,11 +6,7 @@ metadata:
   name: strip-prefix-api
 
 spec:
-  # admin-api's own routes (/banners, etc.) aren't version-prefixed internally - list both
-  # exact /api/admin/0 and /api/admin/1 so either external version segment strips cleanly to
-  # the app's real unprefixed routes, matching catalog-api's strip-prefix-v1 convention even
-  # though this app doesn't implement versioning of its own yet.
   stripPrefix:
     prefixes:
-      - /api/admin/0
-      - /api/admin/1
+      - /api/0/admin
+      - /api/1/admin
