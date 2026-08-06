@@ -1,4 +1,12 @@
 
+## 0.5.1 - 2026-08-06
+
+### Fixed
+- Target DB_PASSWORD explicitly in the admin-api-db rewrite
+- Remove startup log dump of the full process environment
+
+
+
 ## 0.5.0 - 2026-08-05
 
 
