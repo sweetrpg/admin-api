@@ -44,7 +44,6 @@ import (
 // @license.url https://mit-license.org/
 func main() {
 	_ = godotenv.Load(".env")
-	log.Printf("ENV: %v", os.Environ())
 
 	logging.Init()
 

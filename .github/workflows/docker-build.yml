@@ -151,6 +151,9 @@ jobs:
                   docker buildx imagetools inspect ghcr.io/sweetrpg/admin-api:${{ needs.meta.outputs.build-version }}
             - name: Create Sentry release
               if: github.ref_name != 'develop'
+              # Release tracking is best-effort - a missing/misconfigured Sentry project
+              # shouldn't be able to block the image tag bump downstream from ever running.
+              continue-on-error: true
               uses: getsentry/action-release@v3
               env:
                   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
