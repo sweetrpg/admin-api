@@ -19,6 +19,12 @@ and `mongodb.go` (database connection lifecycle and generic CRUD). Nothing in th
 depends on this repo yet - `admin-web` (a separate repo) and consuming frontends
 (`main-web`, `catalog-web`) call it over HTTP, not as a Go dependency.
 
+## Logging
+
+HTTP access logs output in JSON format via `slog-gin` middleware, configured in `cmd/admin-api/main.go`.
+Application logs remain under `common.go/logging` control. This provides structured logs suitable for
+log aggregation systems while keeping HTTP and application concerns separate.
+
 ## Known deviations from `docs/service-conventions.md`
 
 - No `gin-contrib/cache` per-route caching. Banner reads need to reflect admin edits promptly
