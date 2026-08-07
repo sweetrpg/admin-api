@@ -1,4 +1,21 @@
 
+## 0.6.0 - 2026-08-07
+
+### Added
+- Add slog-gin for JSON HTTP access logging
+- Add slog-gin JSON HTTP access logging
+
+
+### Documentation
+- Document slog-gin JSON HTTP logging
+
+
+### Fixed
+- Scope AtlasDatabaseUser role to sweetrpg-admin
+- Authenticate AtlasDatabaseUser against admin, not app db
+
+
+
 ## 0.5.4 - 2026-08-06
 
 ### Fixed
