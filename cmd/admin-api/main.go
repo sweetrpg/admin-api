@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
@@ -19,6 +20,7 @@ import (
 	actuator "github.com/sinhashubham95/go-actuator"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	sloggin "github.com/samber/slog-gin"
 	"github.com/sweetrpg/admin-api/constants"
 	"github.com/sweetrpg/admin-api/docs"
 	"github.com/sweetrpg/admin-api/models"
@@ -53,7 +55,11 @@ func main() {
 		defer stopProfiling()
 	}
 
-	r := gin.Default()
+	httpLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+	r := gin.New()
+	r.Use(sloggin.New(httpLogger))
+	r.Use(gin.Recovery())
 
 	setupTracing(r)
 	defer tracing.TeardownTracing()
