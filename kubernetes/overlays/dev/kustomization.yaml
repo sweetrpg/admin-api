@@ -7,10 +7,13 @@ resources:
     - ../../base
     - atlas-db-user.yaml
     - configmaps.yaml
-    - secrets.yaml
     - ingress.yaml
     - middlewares.yaml
+    - password.yaml
     - pod-monitor.yaml
+    - secrets/db-creds.yaml
+    - secrets/db.yaml
+    - secrets/misc.yaml
 
 labels:
     - pairs:
