@@ -5,6 +5,7 @@ namespace: sweetrpg-admin
 
 resources:
     - ../../base
+    - atlas-db-user.yaml
     - configmaps.yaml
     - secrets.yaml
     - ingress.yaml
