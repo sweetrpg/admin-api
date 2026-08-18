@@ -7,8 +7,13 @@ const (
 	PYROSCOPE_SERVER_ADDRESS = "PYROSCOPE_SERVER_ADDRESS"
 	PYROSCOPE_TENANT_ID      = "PYROSCOPE_TENANT_ID"
 
-	// INTERNAL_SERVICE_TOKEN gates write routes; see server/middleware.WriteAuth.
+	// INTERNAL_SERVICE_TOKEN gates write routes as a legacy fallback during migration;
+	// see server/middleware.WriteAuth.
 	INTERNAL_SERVICE_TOKEN = "INTERNAL_SERVICE_TOKEN"
+
+	// AUTH_API_URL is auth-api's base URL, used by server/middleware.WriteAuth to verify
+	// forwarded user bearer tokens via /authz/check.
+	AUTH_API_URL = "AUTH_API_URL"
 )
 
 // Value constants

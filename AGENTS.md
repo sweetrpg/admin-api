@@ -19,6 +19,16 @@ and `mongodb.go` (database connection lifecycle and generic CRUD). Nothing in th
 depends on this repo yet - `admin-web` (a separate repo) and consuming frontends
 (`main-web`, `catalog-web`) call it over HTTP, not as a Go dependency.
 
+## Write-route auth
+
+Every `POST`/`PUT`/`DELETE` route requires either a forwarded user bearer token carrying the
+`admin` role (verified against `auth-api`'s `/authz/check`, via the `authz` package) or, as a
+legacy fallback during migration, the shared `X-Internal-Service-Token` header (matching
+`INTERNAL_SERVICE_TOKEN`) plus `X-Acting-User-Sub` - see `server/middleware/writeauth.go` and
+`sweetrpg/platform`'s `api-client-auth` OpenSpec change. `admin-web` forwards the acting admin's
+own Auth0 access token from its shared session as the bearer credential; the legacy header path
+exists only for callers not yet migrated and will be removed once none remain.
+
 ## Logging
 
 HTTP access logs output in JSON format via `slog-gin` middleware, configured in `cmd/admin-api/main.go`.
