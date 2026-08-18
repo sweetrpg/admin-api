@@ -21,6 +21,7 @@ import (
 	actuator "github.com/sinhashubham95/go-actuator"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/sweetrpg/admin-api/authz"
 	"github.com/sweetrpg/admin-api/constants"
 	"github.com/sweetrpg/admin-api/docs"
 	"github.com/sweetrpg/admin-api/models"
@@ -97,7 +98,8 @@ func main() {
 	// Add rate limiter
 	r.Use(RateLimiter())
 
-	server.SetupHandlers(r)
+	authzClient := authz.NewClient(util.GetEnv(constants.AUTH_API_URL, ""))
+	server.SetupHandlers(r, authzClient)
 
 	_ = r.Run(util.GetEnv(apiconstants.BIND_ADDRESS, ":8000"))
 }
@@ -115,7 +117,10 @@ func setupSwagger(r *gin.Engine) {
 
 func checkWriteAuthConfig() {
 	if util.GetEnv(constants.INTERNAL_SERVICE_TOKEN, "") == "" {
-		logging.Logger.Warn("INTERNAL_SERVICE_TOKEN not set, all write routes will reject every request with 401")
+		logging.Logger.Warn("INTERNAL_SERVICE_TOKEN not set, legacy header fallback disabled for write routes")
+	}
+	if util.GetEnv(constants.AUTH_API_URL, "") == "" {
+		logging.Logger.Warn("AUTH_API_URL not set, forwarded user bearer tokens cannot be verified for write routes")
 	}
 }
 

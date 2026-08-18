@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sweetrpg/admin-api/authz"
 	"github.com/sweetrpg/admin-api/constants"
 	"github.com/sweetrpg/admin-api/models"
 	"github.com/sweetrpg/admin-api/server/middleware"
@@ -19,13 +20,13 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-func setupMaintenanceModeHandlers(g *gin.Engine) {
+func setupMaintenanceModeHandlers(g *gin.Engine, authzClient *authz.Client) {
 	logging.Logger.Info("Setting up maintenance-mode endpoint handlers...")
 
 	g.GET("/maintenance-modes", listMaintenanceModes)
 	g.GET("/maintenance-modes/active", listActiveMaintenanceModes)
 
-	writes := g.Group("/maintenance-modes", middleware.WriteAuth())
+	writes := g.Group("/maintenance-modes", middleware.WriteAuth(authzClient))
 	writes.POST("", createMaintenanceMode)
 	writes.PUT("/:id", updateMaintenanceMode)
 	writes.DELETE("/:id", deleteMaintenanceMode)
