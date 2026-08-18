@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>admin-api: Go Coverage Report</title>
+		<title>authz: Go Coverage Report</title>
 		<style>
 			body {
 				background: black;
@@ -55,25 +55,27 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/sweetrpg/admin-api/cmd/admin-api/main.go (0.0%)</option>
+				<option value="file0">github.com/sweetrpg/admin-api/authz/client.go (67.9%)</option>
 				
-				<option value="file1">github.com/sweetrpg/admin-api/docs/docs.go (0.0%)</option>
+				<option value="file1">github.com/sweetrpg/admin-api/cmd/admin-api/main.go (0.0%)</option>
 				
-				<option value="file2">github.com/sweetrpg/admin-api/models/audit.go (0.0%)</option>
+				<option value="file2">github.com/sweetrpg/admin-api/docs/docs.go (0.0%)</option>
 				
-				<option value="file3">github.com/sweetrpg/admin-api/models/banner.go (88.9%)</option>
+				<option value="file3">github.com/sweetrpg/admin-api/models/audit.go (0.0%)</option>
 				
-				<option value="file4">github.com/sweetrpg/admin-api/models/maintenance_mode.go (85.7%)</option>
+				<option value="file4">github.com/sweetrpg/admin-api/models/banner.go (88.9%)</option>
 				
-				<option value="file5">github.com/sweetrpg/admin-api/server/banners.go (12.0%)</option>
+				<option value="file5">github.com/sweetrpg/admin-api/models/maintenance_mode.go (85.7%)</option>
 				
-				<option value="file6">github.com/sweetrpg/admin-api/server/handlers.go (100.0%)</option>
+				<option value="file6">github.com/sweetrpg/admin-api/server/banners.go (12.0%)</option>
 				
-				<option value="file7">github.com/sweetrpg/admin-api/server/maintenance_modes.go (14.5%)</option>
+				<option value="file7">github.com/sweetrpg/admin-api/server/handlers.go (100.0%)</option>
 				
-				<option value="file8">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (100.0%)</option>
+				<option value="file8">github.com/sweetrpg/admin-api/server/maintenance_modes.go (14.5%)</option>
 				
-				<option value="file9">github.com/sweetrpg/admin-api/server/status.go (45.5%)</option>
+				<option value="file9">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (90.0%)</option>
+				
+				<option value="file10">github.com/sweetrpg/admin-api/server/status.go (45.5%)</option>
 				
 				</select>
 			</div>
@@ -96,7 +98,115 @@
 		</div>
 		<div id="content">
 		
-		<pre class="file" id="file0" style="display: none">package main
+		<pre class="file" id="file0" style="display: none">// Package authz calls auth-api's POST /authz/check to verify a caller's bearer token and
+// resolve their roles, and provides Gin middleware that gates a route on holding one of a set
+// of allowed roles. See platform's api-client-auth spec
+// (openspec/changes/api-client-auth in sweetrpg/platform).
+package authz
+
+import (
+        "bytes"
+        "context"
+        "encoding/json"
+        "fmt"
+        "net/http"
+        "time"
+
+        "github.com/sweetrpg/common.go/logging"
+)
+
+// Platform role names, matching auth-api's fixed role model exactly (see
+// openspec/specs/user-authorization/spec.md's "Role model" requirement).
+const (
+        RoleUser      = "user"
+        RoleSubmitter = "submitter"
+        RoleEditor    = "editor"
+        RoleModerator = "moderator"
+        RoleApprover  = "approver"
+        RoleAdmin     = "admin"
+)
+
+// CheckResponse is the union of auth-api's allowed/denied /authz/check response shapes.
+type CheckResponse struct {
+        Allowed bool     `json:"allowed"`
+        Roles   []string `json:"roles"`
+        Sub     string   `json:"sub"`
+        Reason  string   `json:"reason"`
+}
+
+// HasRole reports whether roles contains want.
+func HasRole(roles []string, want string) bool <span class="cov0" title="0">{
+        for _, r := range roles </span><span class="cov0" title="0">{
+                if r == want </span><span class="cov0" title="0">{
+                        return true
+                }</span>
+        }
+        <span class="cov0" title="0">return false</span>
+}
+
+// InvalidTokenError means auth-api rejected the bearer token itself (missing, expired,
+// unverifiable) - distinct from a service-level deny (Allowed: false with a Reason) or a
+// transport/backend failure.
+type InvalidTokenError struct{}
+
+func (InvalidTokenError) Error() string <span class="cov0" title="0">{ return "authz: invalid or missing token" }</span>
+
+// Client calls auth-api's /authz/check endpoint.
+type Client struct {
+        baseURL string
+        http    *http.Client
+}
+
+// NewClient builds a Client against auth-api's base URL (e.g.
+// http://api-v1.sweetrpg-auth.svc.cluster.local:8000). An empty baseURL is accepted so the
+// service can still start when AUTH_API_URL isn't configured; every Check call will then fail
+// with a transport error, which RequireAnyRole surfaces as a 503.
+func NewClient(baseURL string) *Client <span class="cov10" title="4">{
+        return &amp;Client{
+                baseURL: baseURL,
+                http:    &amp;http.Client{Timeout: 5 * time.Second},
+        }
+}</span>
+
+// Check verifies token against auth-api and returns the caller's allowed/roles/subject for the
+// given service name. Returns InvalidTokenError if auth-api rejects the token itself.
+func (c *Client) Check(ctx context.Context, token, service string) (*CheckResponse, error) <span class="cov10" title="4">{
+        body, err := json.Marshal(map[string]string{"service": service})
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("authz: marshal request: %w", err)
+        }</span>
+
+        <span class="cov10" title="4">req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/authz/check", bytes.NewReader(body))
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("authz: build request: %w", err)
+        }</span>
+        <span class="cov10" title="4">req.Header.Set("Content-Type", "application/json")
+        req.Header.Set("Authorization", "Bearer "+token)
+
+        resp, err := c.http.Do(req)
+        if err != nil </span><span class="cov1" title="1">{
+                return nil, fmt.Errorf("authz: request failed: %w", err)
+        }</span>
+        <span class="cov8" title="3">defer func() </span><span class="cov8" title="3">{ _ = resp.Body.Close() }</span>()
+
+        <span class="cov8" title="3">if resp.StatusCode == http.StatusUnauthorized </span><span class="cov1" title="1">{
+                return nil, InvalidTokenError{}
+        }</span>
+        <span class="cov5" title="2">if resp.StatusCode != http.StatusOK </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("authz: unexpected status %d from auth-api", resp.StatusCode)
+        }</span>
+
+        <span class="cov5" title="2">var out CheckResponse
+        if err := json.NewDecoder(resp.Body).Decode(&amp;out); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("authz: decode response: %w", err)
+        }</span>
+
+        <span class="cov5" title="2">logging.Logger.Debug("authz check", "service", service, "allowed", out.Allowed, "sub", out.Sub)
+        return &amp;out, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package main
 
 import (
         "context"
@@ -119,6 +229,7 @@ import (
         actuator "github.com/sinhashubham95/go-actuator"
         swaggerfiles "github.com/swaggo/files"
         ginSwagger "github.com/swaggo/gin-swagger"
+        "github.com/sweetrpg/admin-api/authz"
         "github.com/sweetrpg/admin-api/constants"
         "github.com/sweetrpg/admin-api/docs"
         "github.com/sweetrpg/admin-api/models"
@@ -195,7 +306,8 @@ func main() <span class="cov0" title="0">{
         // Add rate limiter
         r.Use(RateLimiter())
 
-        server.SetupHandlers(r)
+        authzClient := authz.NewClient(util.GetEnv(constants.AUTH_API_URL, ""))
+        server.SetupHandlers(r, authzClient)
 
         _ = r.Run(util.GetEnv(apiconstants.BIND_ADDRESS, ":8000"))</span>
 }
@@ -213,7 +325,10 @@ func setupSwagger(r *gin.Engine) <span class="cov0" title="0">{
 
 func checkWriteAuthConfig() <span class="cov0" title="0">{
         if util.GetEnv(constants.INTERNAL_SERVICE_TOKEN, "") == "" </span><span class="cov0" title="0">{
-                logging.Logger.Warn("INTERNAL_SERVICE_TOKEN not set, all write routes will reject every request with 401")
+                logging.Logger.Warn("INTERNAL_SERVICE_TOKEN not set, legacy header fallback disabled for write routes")
+        }</span>
+        <span class="cov0" title="0">if util.GetEnv(constants.AUTH_API_URL, "") == "" </span><span class="cov0" title="0">{
+                logging.Logger.Warn("AUTH_API_URL not set, forwarded user bearer tokens cannot be verified for write routes")
         }</span>
 }
 
@@ -361,7 +476,7 @@ func RateLimiter() gin.HandlerFunc <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file1" style="display: none">// Package docs Code generated by swaggo/swag. DO NOT EDIT
+		<pre class="file" id="file2" style="display: none">// Package docs Code generated by swaggo/swag. DO NOT EDIT
 package docs
 
 import "github.com/swaggo/swag"
@@ -1242,7 +1357,7 @@ func init() <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package models
+		<pre class="file" id="file3" style="display: none">package models
 
 import (
         "context"
@@ -1339,7 +1454,7 @@ func EnsureAuditIndexes(ctx context.Context) error <span class="cov0" title="0">
 }</span>
 </pre>
 		
-		<pre class="file" id="file3" style="display: none">// Package models defines the persisted document shapes for admin-api.
+		<pre class="file" id="file4" style="display: none">// Package models defines the persisted document shapes for admin-api.
 package models
 
 import (
@@ -1470,7 +1585,7 @@ func EnsureIndexes(ctx context.Context) error <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package models
+		<pre class="file" id="file5" style="display: none">package models
 
 import (
         "context"
@@ -1564,7 +1679,7 @@ func EnsureMaintenanceModeIndexes(ctx context.Context) error <span class="cov0" 
 }</span>
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package server
+		<pre class="file" id="file6" style="display: none">package server
 
 import (
         "net/http"
@@ -1573,6 +1688,7 @@ import (
         "time"
 
         "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/authz"
         "github.com/sweetrpg/admin-api/constants"
         "github.com/sweetrpg/admin-api/models"
         "github.com/sweetrpg/admin-api/server/middleware"
@@ -1586,12 +1702,12 @@ import (
         oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-func setupBannerHandlers(g *gin.Engine) <span class="cov1" title="1">{
+func setupBannerHandlers(g *gin.Engine, authzClient *authz.Client) <span class="cov1" title="1">{
         logging.Logger.Info("Setting up banner endpoint handlers...")
 
         g.GET("/banners", listBanners)
 
-        writes := g.Group("/banners", middleware.WriteAuth())
+        writes := g.Group("/banners", middleware.WriteAuth(authzClient))
         writes.POST("", createBanner)
         writes.PUT("/:id", updateBanner)
         writes.DELETE("/:id", deleteBanner)
@@ -1925,20 +2041,21 @@ func parseScope(raw string) (models.ScopeType, string) <span class="cov10" title
 }
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">package server
+		<pre class="file" id="file7" style="display: none">package server
 
 import (
         "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/authz"
 )
 
-func SetupHandlers(g *gin.Engine) <span class="cov8" title="1">{
-        setupBannerHandlers(g)
-        setupMaintenanceModeHandlers(g)
+func SetupHandlers(g *gin.Engine, authzClient *authz.Client) <span class="cov8" title="1">{
+        setupBannerHandlers(g, authzClient)
+        setupMaintenanceModeHandlers(g, authzClient)
         setupStatusHandlers(g)
 }</span>
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package server
+		<pre class="file" id="file8" style="display: none">package server
 
 import (
         "net/http"
@@ -1946,6 +2063,7 @@ import (
         "time"
 
         "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/authz"
         "github.com/sweetrpg/admin-api/constants"
         "github.com/sweetrpg/admin-api/models"
         "github.com/sweetrpg/admin-api/server/middleware"
@@ -1959,13 +2077,13 @@ import (
         oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-func setupMaintenanceModeHandlers(g *gin.Engine) <span class="cov1" title="1">{
+func setupMaintenanceModeHandlers(g *gin.Engine, authzClient *authz.Client) <span class="cov1" title="1">{
         logging.Logger.Info("Setting up maintenance-mode endpoint handlers...")
 
         g.GET("/maintenance-modes", listMaintenanceModes)
         g.GET("/maintenance-modes/active", listActiveMaintenanceModes)
 
-        writes := g.Group("/maintenance-modes", middleware.WriteAuth())
+        writes := g.Group("/maintenance-modes", middleware.WriteAuth(authzClient))
         writes.POST("", createMaintenanceMode)
         writes.PUT("/:id", updateMaintenanceMode)
         writes.DELETE("/:id", deleteMaintenanceMode)
@@ -2330,46 +2448,71 @@ func parseMaintenanceScope(raw string) (models.MaintenanceScopeType, string) <sp
 }
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">// Package middleware provides Gin middleware for admin-api's route groups.
+		<pre class="file" id="file9" style="display: none">// Package middleware provides Gin middleware for admin-api's route groups.
 package middleware
 
 import (
         "crypto/subtle"
         "net/http"
+        "strings"
 
         "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/authz"
         "github.com/sweetrpg/admin-api/constants"
         apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/common.go/logging"
         "github.com/sweetrpg/common.go/util"
 )
 
 const (
         internalServiceTokenHeader = "X-Internal-Service-Token"
         actingUserSubHeader        = "X-Acting-User-Sub"
+        bearerPrefix               = "Bearer "
 
         // ActingUserSubKey is the gin.Context key write handlers read to get the
         // attributed acting user after WriteAuth has validated the request.
         ActingUserSubKey = "actingUserSub"
 )
 
-// WriteAuth requires a valid X-Internal-Service-Token header (compared
-// constant-time against INTERNAL_SERVICE_TOKEN) and a non-empty
-// X-Acting-User-Sub header, matching users-api's InternalServiceAuth contract
-// for the same caller (admin-web). An unset or empty INTERNAL_SERVICE_TOKEN
-// permanently disables the write path rather than trusting an empty token.
-// On success, the acting user is stashed on the context under
-// ActingUserSubKey for handlers to attribute their audit records to.
-func WriteAuth() gin.HandlerFunc <span class="cov10" title="5">{
-        return func(c *gin.Context) </span><span class="cov10" title="5">{
-                expected := util.GetEnv(constants.INTERNAL_SERVICE_TOKEN, "")
+// WriteAuth requires either a forwarded user bearer token carrying the admin role (verified
+// against auth-api's /authz/check) or, as a legacy fallback during migration, a valid
+// X-Internal-Service-Token header (compared constant-time against INTERNAL_SERVICE_TOKEN). The
+// legacy fallback authorizes the request but has no verified user to attribute it to; callers
+// using it must still send a value acting-user identity out of band until they migrate.
+// On success, the acting user (from auth-api's verified token subject) is stashed on the
+// context under ActingUserSubKey for handlers to attribute their audit records to.
+func WriteAuth(client *authz.Client) gin.HandlerFunc <span class="cov10" title="8">{
+        return func(c *gin.Context) </span><span class="cov10" title="8">{
+                if token := bearerToken(c); token != "" </span><span class="cov5" title="3">{
+                        result, err := client.Check(c.Request.Context(), token, constants.ServiceName)
+                        if err != nil </span><span class="cov1" title="1">{
+                                if _, ok := err.(authz.InvalidTokenError); ok </span><span class="cov1" title="1">{
+                                        unauthorized(c)
+                                        return
+                                }</span>
+                                <span class="cov0" title="0">logging.Logger.Error("authz check failed", "error", err.Error())
+                                c.AbortWithStatusJSON(http.StatusServiceUnavailable, apiv.ErrorVO{
+                                        Error:   "authz_unavailable",
+                                        Message: "Unable to verify authorization",
+                                })
+                                return</span>
+                        }
+
+                        <span class="cov4" title="2">if !result.Allowed || !authz.HasRole(result.Roles, authz.RoleAdmin) </span><span class="cov1" title="1">{
+                                forbidden(c)
+                                return
+                        }</span>
+
+                        <span class="cov1" title="1">c.Set(ActingUserSubKey, result.Sub)
+                        c.Next()
+                        return</span>
+                }
+
+                <span class="cov7" title="5">expected := util.GetEnv(constants.INTERNAL_SERVICE_TOKEN, "")
                 presented := c.GetHeader(internalServiceTokenHeader)
                 actingUserSub := c.GetHeader(actingUserSubHeader)
-
-                if expected == "" || subtle.ConstantTimeCompare([]byte(expected), []byte(presented)) != 1 || actingUserSub == "" </span><span class="cov8" title="4">{
-                        c.AbortWithStatusJSON(http.StatusUnauthorized, apiv.ErrorVO{
-                                Error:   "unauthorized",
-                                Message: "missing or invalid internal service credentials",
-                        })
+                if expected == "" || subtle.ConstantTimeCompare([]byte(expected), []byte(presented)) != 1 || actingUserSub == "" </span><span class="cov7" title="4">{
+                        unauthorized(c)
                         return
                 }</span>
 
@@ -2377,9 +2520,31 @@ func WriteAuth() gin.HandlerFunc <span class="cov10" title="5">{
                 c.Next()</span>
         }
 }
+
+func bearerToken(c *gin.Context) string <span class="cov10" title="8">{
+        auth := c.GetHeader("Authorization")
+        if !strings.HasPrefix(auth, bearerPrefix) </span><span class="cov7" title="5">{
+                return ""
+        }</span>
+        <span class="cov5" title="3">return strings.TrimPrefix(auth, bearerPrefix)</span>
+}
+
+func unauthorized(c *gin.Context) <span class="cov7" title="5">{
+        c.AbortWithStatusJSON(http.StatusUnauthorized, apiv.ErrorVO{
+                Error:   "unauthorized",
+                Message: "missing or invalid credentials",
+        })
+}</span>
+
+func forbidden(c *gin.Context) <span class="cov1" title="1">{
+        c.AbortWithStatusJSON(http.StatusForbidden, apiv.ErrorVO{
+                Error:   "forbidden",
+                Message: "caller does not have a qualifying role",
+        })
+}</span>
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package server
+		<pre class="file" id="file10" style="display: none">package server
 
 import (
         "net/http"
