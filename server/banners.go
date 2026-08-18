@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sweetrpg/admin-api/authz"
 	"github.com/sweetrpg/admin-api/constants"
 	"github.com/sweetrpg/admin-api/models"
 	"github.com/sweetrpg/admin-api/server/middleware"
@@ -20,12 +21,12 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-func setupBannerHandlers(g *gin.Engine) {
+func setupBannerHandlers(g *gin.Engine, authzClient *authz.Client) {
 	logging.Logger.Info("Setting up banner endpoint handlers...")
 
 	g.GET("/banners", listBanners)
 
-	writes := g.Group("/banners", middleware.WriteAuth())
+	writes := g.Group("/banners", middleware.WriteAuth(authzClient))
 	writes.POST("", createBanner)
 	writes.PUT("/:id", updateBanner)
 	writes.DELETE("/:id", deleteBanner)

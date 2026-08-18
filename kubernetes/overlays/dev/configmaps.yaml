@@ -21,3 +21,4 @@ data:
   # PYROSCOPE_SERVER_ADDRESS: http://pyroscope.observability.svc.cluster.local:4040
   # PYROSCOPE_TENANT_ID: psw
   SENTRY_RELEASE: "1"
+  AUTH_API_URL: http://api-v1.sweetrpg-auth.svc.cluster.local:8000

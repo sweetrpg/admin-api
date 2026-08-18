@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sweetrpg/admin-api/authz"
 	"github.com/sweetrpg/common.go/logging"
 )
 
@@ -21,7 +22,7 @@ func TestWriteRoutesRequireAuth(t *testing.T) {
 	logging.Init()
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	SetupHandlers(r)
+	SetupHandlers(r, authz.NewClient(""))
 
 	writeRoutes := []struct {
 		method string

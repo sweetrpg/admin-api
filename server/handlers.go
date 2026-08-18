@@ -2,10 +2,11 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/sweetrpg/admin-api/authz"
 )
 
-func SetupHandlers(g *gin.Engine) {
-	setupBannerHandlers(g)
-	setupMaintenanceModeHandlers(g)
+func SetupHandlers(g *gin.Engine, authzClient *authz.Client) {
+	setupBannerHandlers(g, authzClient)
+	setupMaintenanceModeHandlers(g, authzClient)
 	setupStatusHandlers(g)
 }
