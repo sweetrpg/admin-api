@@ -1,4 +1,13 @@
 
+## 0.8.0 - 2026-08-18
+
+### Added
+- Enable Stakater reloader for Prometheus metrics
+- Add MongoDB connection config to local overlay
+- Authorize write routes on forwarded user token, not shared secret
+
+
+
 ## 0.7.0 - 2026-08-11
 
 ### Added
