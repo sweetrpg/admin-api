@@ -2,7 +2,6 @@
 package middleware
 
 import (
-	"crypto/subtle"
 	"net/http"
 	"strings"
 
@@ -11,62 +10,48 @@ import (
 	"github.com/sweetrpg/admin-api/constants"
 	apiv "github.com/sweetrpg/api-core.go/vo"
 	"github.com/sweetrpg/common.go/logging"
-	"github.com/sweetrpg/common.go/util"
 )
 
 const (
-	internalServiceTokenHeader = "X-Internal-Service-Token"
-	actingUserSubHeader        = "X-Acting-User-Sub"
-	bearerPrefix               = "Bearer "
+	bearerPrefix = "Bearer "
 
 	// ActingUserSubKey is the gin.Context key write handlers read to get the
 	// attributed acting user after WriteAuth has validated the request.
 	ActingUserSubKey = "actingUserSub"
 )
 
-// WriteAuth requires either a forwarded user bearer token carrying the admin role (verified
-// against auth-api's /authz/check) or, as a legacy fallback during migration, a valid
-// X-Internal-Service-Token header (compared constant-time against INTERNAL_SERVICE_TOKEN). The
-// legacy fallback authorizes the request but has no verified user to attribute it to; callers
-// using it must still send a value acting-user identity out of band until they migrate.
-// On success, the acting user (from auth-api's verified token subject) is stashed on the
-// context under ActingUserSubKey for handlers to attribute their audit records to.
+// WriteAuth requires a forwarded user bearer token carrying the admin role, verified
+// against auth-api's /authz/check. On success, the acting user (from auth-api's verified
+// token subject) is stashed on the context under ActingUserSubKey for handlers to
+// attribute their audit records to.
 func WriteAuth(client *authz.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if token := bearerToken(c); token != "" {
-			result, err := client.Check(c.Request.Context(), token, constants.ServiceName)
-			if err != nil {
-				if _, ok := err.(authz.InvalidTokenError); ok {
-					unauthorized(c)
-					return
-				}
-				logging.Logger.Error("authz check failed", "error", err.Error())
-				c.AbortWithStatusJSON(http.StatusServiceUnavailable, apiv.ErrorVO{
-					Error:   "authz_unavailable",
-					Message: "Unable to verify authorization",
-				})
-				return
-			}
-
-			if !result.Allowed || !authz.HasRole(result.Roles, authz.RoleAdmin) {
-				forbidden(c)
-				return
-			}
-
-			c.Set(ActingUserSubKey, result.Sub)
-			c.Next()
-			return
-		}
-
-		expected := util.GetEnv(constants.INTERNAL_SERVICE_TOKEN, "")
-		presented := c.GetHeader(internalServiceTokenHeader)
-		actingUserSub := c.GetHeader(actingUserSubHeader)
-		if expected == "" || subtle.ConstantTimeCompare([]byte(expected), []byte(presented)) != 1 || actingUserSub == "" {
+		token := bearerToken(c)
+		if token == "" {
 			unauthorized(c)
 			return
 		}
 
-		c.Set(ActingUserSubKey, actingUserSub)
+		result, err := client.Check(c.Request.Context(), token, constants.ServiceName)
+		if err != nil {
+			if _, ok := err.(authz.InvalidTokenError); ok {
+				unauthorized(c)
+				return
+			}
+			logging.Logger.Error("authz check failed", "error", err.Error())
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, apiv.ErrorVO{
+				Error:   "authz_unavailable",
+				Message: "Unable to verify authorization",
+			})
+			return
+		}
+
+		if !result.Allowed || !authz.HasRole(result.Roles, authz.RoleAdmin) {
+			forbidden(c)
+			return
+		}
+
+		c.Set(ActingUserSubKey, result.Sub)
 		c.Next()
 	}
 }

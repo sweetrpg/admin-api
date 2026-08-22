@@ -1,4 +1,11 @@
 
+## 0.8.2 - 2026-08-22
+
+### Changed
+- Remove legacy X-Internal-Service-Token fallback from write routes
+
+
+
 ## 0.8.1 - 2026-08-21
 
 ### Fixed
