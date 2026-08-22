@@ -116,9 +116,6 @@ func setupSwagger(r *gin.Engine) {
 }
 
 func checkWriteAuthConfig() {
-	if util.GetEnv(constants.INTERNAL_SERVICE_TOKEN, "") == "" {
-		logging.Logger.Warn("INTERNAL_SERVICE_TOKEN not set, legacy header fallback disabled for write routes")
-	}
 	if util.GetEnv(constants.AUTH_API_URL, "") == "" {
 		logging.Logger.Warn("AUTH_API_URL not set, forwarded user bearer tokens cannot be verified for write routes")
 	}

@@ -77,7 +77,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires internal-service write auth.",
+                "description": "Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires a forwarded user bearer token carrying the admin role.",
                 "consumes": [
                     "application/json"
                 ],
@@ -91,15 +91,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Shared internal-service secret",
-                        "name": "X-Internal-Service-Token",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Acting admin's Auth0 sub, for audit attribution",
-                        "name": "X-Acting-User-Sub",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -143,7 +136,7 @@ const docTemplate = `{
         },
         "/banners/{id}": {
             "put": {
-                "description": "Replaces the mutable fields of an existing banner message. expires_at is required. Requires internal-service write auth.",
+                "description": "Replaces the mutable fields of an existing banner message. expires_at is required. Requires a forwarded user bearer token carrying the admin role.",
                 "consumes": [
                     "application/json"
                 ],
@@ -157,15 +150,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Shared internal-service secret",
-                        "name": "X-Internal-Service-Token",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Acting admin's Auth0 sub, for audit attribution",
-                        "name": "X-Acting-User-Sub",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -220,7 +206,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Deletes a banner message; it is immediately excluded from subsequent queries. Requires internal-service write auth.",
+                "description": "Deletes a banner message; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.",
                 "tags": [
                     "banners"
                 ],
@@ -228,15 +214,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Shared internal-service secret",
-                        "name": "X-Internal-Service-Token",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Acting admin's Auth0 sub, for audit attribution",
-                        "name": "X-Acting-User-Sub",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -309,7 +288,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a maintenance-mode record for the given scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires internal-service write auth.",
+                "description": "Creates a maintenance-mode record for the given scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires a forwarded user bearer token carrying the admin role.",
                 "consumes": [
                     "application/json"
                 ],
@@ -323,15 +302,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Shared internal-service secret",
-                        "name": "X-Internal-Service-Token",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Acting admin's Auth0 sub, for audit attribution",
-                        "name": "X-Acting-User-Sub",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -429,7 +401,7 @@ const docTemplate = `{
         },
         "/maintenance-modes/{id}": {
             "put": {
-                "description": "Replaces the mutable fields of an existing maintenance-mode record. Requires internal-service write auth.",
+                "description": "Replaces the mutable fields of an existing maintenance-mode record. Requires a forwarded user bearer token carrying the admin role.",
                 "consumes": [
                     "application/json"
                 ],
@@ -443,15 +415,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Shared internal-service secret",
-                        "name": "X-Internal-Service-Token",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Acting admin's Auth0 sub, for audit attribution",
-                        "name": "X-Acting-User-Sub",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -506,7 +471,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Deletes a maintenance-mode record; it is immediately excluded from subsequent queries. Requires internal-service write auth.",
+                "description": "Deletes a maintenance-mode record; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.",
                 "tags": [
                     "maintenance-modes"
                 ],
@@ -514,15 +479,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Shared internal-service secret",
-                        "name": "X-Internal-Service-Token",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Acting admin's Auth0 sub, for audit attribution",
-                        "name": "X-Acting-User-Sub",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
