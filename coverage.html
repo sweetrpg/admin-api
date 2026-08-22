@@ -73,7 +73,7 @@
 				
 				<option value="file8">github.com/sweetrpg/admin-api/server/maintenance_modes.go (14.5%)</option>
 				
-				<option value="file9">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (90.0%)</option>
+				<option value="file9">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (87.5%)</option>
 				
 				<option value="file10">github.com/sweetrpg/admin-api/server/status.go (45.5%)</option>
 				
@@ -324,10 +324,7 @@ func setupSwagger(r *gin.Engine) <span class="cov0" title="0">{
 }</span>
 
 func checkWriteAuthConfig() <span class="cov0" title="0">{
-        if util.GetEnv(constants.INTERNAL_SERVICE_TOKEN, "") == "" </span><span class="cov0" title="0">{
-                logging.Logger.Warn("INTERNAL_SERVICE_TOKEN not set, legacy header fallback disabled for write routes")
-        }</span>
-        <span class="cov0" title="0">if util.GetEnv(constants.AUTH_API_URL, "") == "" </span><span class="cov0" title="0">{
+        if util.GetEnv(constants.AUTH_API_URL, "") == "" </span><span class="cov0" title="0">{
                 logging.Logger.Warn("AUTH_API_URL not set, forwarded user bearer tokens cannot be verified for write routes")
         }</span>
 }
@@ -555,7 +552,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires internal-service write auth.",
+                "description": "Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires a forwarded user bearer token carrying the admin role.",
                 "consumes": [
                     "application/json"
                 ],
@@ -569,15 +566,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Shared internal-service secret",
-                        "name": "X-Internal-Service-Token",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Acting admin's Auth0 sub, for audit attribution",
-                        "name": "X-Acting-User-Sub",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -621,7 +611,7 @@ const docTemplate = `{
         },
         "/banners/{id}": {
             "put": {
-                "description": "Replaces the mutable fields of an existing banner message. expires_at is required. Requires internal-service write auth.",
+                "description": "Replaces the mutable fields of an existing banner message. expires_at is required. Requires a forwarded user bearer token carrying the admin role.",
                 "consumes": [
                     "application/json"
                 ],
@@ -635,15 +625,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Shared internal-service secret",
-                        "name": "X-Internal-Service-Token",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Acting admin's Auth0 sub, for audit attribution",
-                        "name": "X-Acting-User-Sub",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -698,7 +681,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Deletes a banner message; it is immediately excluded from subsequent queries. Requires internal-service write auth.",
+                "description": "Deletes a banner message; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.",
                 "tags": [
                     "banners"
                 ],
@@ -706,15 +689,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Shared internal-service secret",
-                        "name": "X-Internal-Service-Token",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Acting admin's Auth0 sub, for audit attribution",
-                        "name": "X-Acting-User-Sub",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -787,7 +763,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a maintenance-mode record for the given scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires internal-service write auth.",
+                "description": "Creates a maintenance-mode record for the given scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires a forwarded user bearer token carrying the admin role.",
                 "consumes": [
                     "application/json"
                 ],
@@ -801,15 +777,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Shared internal-service secret",
-                        "name": "X-Internal-Service-Token",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Acting admin's Auth0 sub, for audit attribution",
-                        "name": "X-Acting-User-Sub",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -907,7 +876,7 @@ const docTemplate = `{
         },
         "/maintenance-modes/{id}": {
             "put": {
-                "description": "Replaces the mutable fields of an existing maintenance-mode record. Requires internal-service write auth.",
+                "description": "Replaces the mutable fields of an existing maintenance-mode record. Requires a forwarded user bearer token carrying the admin role.",
                 "consumes": [
                     "application/json"
                 ],
@@ -921,15 +890,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Shared internal-service secret",
-                        "name": "X-Internal-Service-Token",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Acting admin's Auth0 sub, for audit attribution",
-                        "name": "X-Acting-User-Sub",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -984,7 +946,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Deletes a maintenance-mode record; it is immediately excluded from subsequent queries. Requires internal-service write auth.",
+                "description": "Deletes a maintenance-mode record; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.",
                 "tags": [
                     "maintenance-modes"
                 ],
@@ -992,15 +954,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Shared internal-service secret",
-                        "name": "X-Internal-Service-Token",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Acting admin's Auth0 sub, for audit attribution",
-                        "name": "X-Acting-User-Sub",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -1739,12 +1694,11 @@ type updateBannerRequest struct {
 // Create a banner message.
 //
 //        @Summary                Create a banner message
-//        @Description        Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires internal-service write auth.
+//        @Description        Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires a forwarded user bearer token carrying the admin role.
 //        @Tags                        banners
 //        @Accept                        json
 //        @Produce                json
-//        @Param                        X-Internal-Service-Token        header                string                                true        "Shared internal-service secret"
-//        @Param                        X-Acting-User-Sub                        header                string                                true        "Acting admin's Auth0 sub, for audit attribution"
+//        @Param                        Authorization                                header                string                                true        "Bearer user access token"
 //        @Param                        banner                                                body                createBannerRequest        true        "Banner message"
 //        @Success                201                                                        {object}        models.BannerMessage
 //        @Failure                400                                                        {object}        apiv.ErrorVO
@@ -1897,12 +1851,11 @@ func listBanners(c *gin.Context) <span class="cov1" title="1">{
 // Update a banner message.
 //
 //        @Summary                Update a banner message
-//        @Description        Replaces the mutable fields of an existing banner message. expires_at is required. Requires internal-service write auth.
+//        @Description        Replaces the mutable fields of an existing banner message. expires_at is required. Requires a forwarded user bearer token carrying the admin role.
 //        @Tags                        banners
 //        @Accept                        json
 //        @Produce                json
-//        @Param                        X-Internal-Service-Token        header                string                                true        "Shared internal-service secret"
-//        @Param                        X-Acting-User-Sub                        header                string                                true        "Acting admin's Auth0 sub, for audit attribution"
+//        @Param                        Authorization                                header                string                                true        "Bearer user access token"
 //        @Param                        id                                                        path                string                                true        "Banner ID"
 //        @Param                        banner                                                body                updateBannerRequest        true        "Updated banner message"
 //        @Success                200                                                        {object}        models.BannerMessage
@@ -1983,10 +1936,9 @@ func updateBanner(c *gin.Context) <span class="cov0" title="0">{
 // Delete a banner message.
 //
 //        @Summary                Delete a banner message
-//        @Description        Deletes a banner message; it is immediately excluded from subsequent queries. Requires internal-service write auth.
+//        @Description        Deletes a banner message; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.
 //        @Tags                        banners
-//        @Param                        X-Internal-Service-Token        header        string        true        "Shared internal-service secret"
-//        @Param                        X-Acting-User-Sub                        header        string        true        "Acting admin's Auth0 sub, for audit attribution"
+//        @Param                        Authorization                                header        string        true        "Bearer user access token"
 //        @Param                        id                                                        path        string        true        "Banner ID"
 //        @Success                204                                                        {object}        interface{}
 //        @Failure                400                                                        {object}        apiv.ErrorVO
@@ -2104,12 +2056,11 @@ type maintenanceModeRequest struct {
 // Create or update a maintenance-mode record for a scope.
 //
 //        @Summary                Create or update a maintenance-mode record
-//        @Description        Creates a maintenance-mode record for the given scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires internal-service write auth.
+//        @Description        Creates a maintenance-mode record for the given scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires a forwarded user bearer token carrying the admin role.
 //        @Tags                        maintenance-modes
 //        @Accept                        json
 //        @Produce                json
-//        @Param                        X-Internal-Service-Token        header                string                                        true        "Shared internal-service secret"
-//        @Param                        X-Acting-User-Sub                        header                string                                        true        "Acting admin's Auth0 sub, for audit attribution"
+//        @Param                        Authorization                                header                                        string        true        "Bearer user access token"
 //        @Param                        maintenance_mode                        body                maintenanceModeRequest        true        "Maintenance-mode record"
 //        @Success                200                                                        {object}        models.MaintenanceMode
 //        @Success                201                                                        {object}        models.MaintenanceMode
@@ -2272,12 +2223,11 @@ func listActiveMaintenanceModes(c *gin.Context) <span class="cov0" title="0">{
 // Update a maintenance-mode record by id.
 //
 //        @Summary                Update a maintenance-mode record
-//        @Description        Replaces the mutable fields of an existing maintenance-mode record. Requires internal-service write auth.
+//        @Description        Replaces the mutable fields of an existing maintenance-mode record. Requires a forwarded user bearer token carrying the admin role.
 //        @Tags                        maintenance-modes
 //        @Accept                        json
 //        @Produce                json
-//        @Param                        X-Internal-Service-Token        header                string                                        true        "Shared internal-service secret"
-//        @Param                        X-Acting-User-Sub                        header                string                                        true        "Acting admin's Auth0 sub, for audit attribution"
+//        @Param                        Authorization                                header                                        string        true        "Bearer user access token"
 //        @Param                        id                                                        path                string                                        true        "Maintenance-mode record ID"
 //        @Param                        maintenance_mode                        body                maintenanceModeRequest        true        "Updated maintenance-mode record"
 //        @Success                200                                                        {object}        models.MaintenanceMode
@@ -2358,10 +2308,9 @@ func updateMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
 // Delete a maintenance-mode record.
 //
 //        @Summary                Delete a maintenance-mode record
-//        @Description        Deletes a maintenance-mode record; it is immediately excluded from subsequent queries. Requires internal-service write auth.
+//        @Description        Deletes a maintenance-mode record; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.
 //        @Tags                        maintenance-modes
-//        @Param                        X-Internal-Service-Token        header        string        true        "Shared internal-service secret"
-//        @Param                        X-Acting-User-Sub                        header        string        true        "Acting admin's Auth0 sub, for audit attribution"
+//        @Param                        Authorization                                header        string        true        "Bearer user access token"
 //        @Param                        id                                                        path        string        true        "Maintenance-mode record ID"
 //        @Success                204                                                        {object}        interface{}
 //        @Failure                400                                                        {object}        apiv.ErrorVO
@@ -2452,7 +2401,6 @@ func parseMaintenanceScope(raw string) (models.MaintenanceScopeType, string) <sp
 package middleware
 
 import (
-        "crypto/subtle"
         "net/http"
         "strings"
 
@@ -2461,75 +2409,61 @@ import (
         "github.com/sweetrpg/admin-api/constants"
         apiv "github.com/sweetrpg/api-core.go/vo"
         "github.com/sweetrpg/common.go/logging"
-        "github.com/sweetrpg/common.go/util"
 )
 
 const (
-        internalServiceTokenHeader = "X-Internal-Service-Token"
-        actingUserSubHeader        = "X-Acting-User-Sub"
-        bearerPrefix               = "Bearer "
+        bearerPrefix = "Bearer "
 
         // ActingUserSubKey is the gin.Context key write handlers read to get the
         // attributed acting user after WriteAuth has validated the request.
         ActingUserSubKey = "actingUserSub"
 )
 
-// WriteAuth requires either a forwarded user bearer token carrying the admin role (verified
-// against auth-api's /authz/check) or, as a legacy fallback during migration, a valid
-// X-Internal-Service-Token header (compared constant-time against INTERNAL_SERVICE_TOKEN). The
-// legacy fallback authorizes the request but has no verified user to attribute it to; callers
-// using it must still send a value acting-user identity out of band until they migrate.
-// On success, the acting user (from auth-api's verified token subject) is stashed on the
-// context under ActingUserSubKey for handlers to attribute their audit records to.
-func WriteAuth(client *authz.Client) gin.HandlerFunc <span class="cov10" title="8">{
-        return func(c *gin.Context) </span><span class="cov10" title="8">{
-                if token := bearerToken(c); token != "" </span><span class="cov5" title="3">{
-                        result, err := client.Check(c.Request.Context(), token, constants.ServiceName)
-                        if err != nil </span><span class="cov1" title="1">{
-                                if _, ok := err.(authz.InvalidTokenError); ok </span><span class="cov1" title="1">{
-                                        unauthorized(c)
-                                        return
-                                }</span>
-                                <span class="cov0" title="0">logging.Logger.Error("authz check failed", "error", err.Error())
-                                c.AbortWithStatusJSON(http.StatusServiceUnavailable, apiv.ErrorVO{
-                                        Error:   "authz_unavailable",
-                                        Message: "Unable to verify authorization",
-                                })
-                                return</span>
-                        }
-
-                        <span class="cov4" title="2">if !result.Allowed || !authz.HasRole(result.Roles, authz.RoleAdmin) </span><span class="cov1" title="1">{
-                                forbidden(c)
-                                return
-                        }</span>
-
-                        <span class="cov1" title="1">c.Set(ActingUserSubKey, result.Sub)
-                        c.Next()
-                        return</span>
-                }
-
-                <span class="cov7" title="5">expected := util.GetEnv(constants.INTERNAL_SERVICE_TOKEN, "")
-                presented := c.GetHeader(internalServiceTokenHeader)
-                actingUserSub := c.GetHeader(actingUserSubHeader)
-                if expected == "" || subtle.ConstantTimeCompare([]byte(expected), []byte(presented)) != 1 || actingUserSub == "" </span><span class="cov7" title="4">{
+// WriteAuth requires a forwarded user bearer token carrying the admin role, verified
+// against auth-api's /authz/check. On success, the acting user (from auth-api's verified
+// token subject) is stashed on the context under ActingUserSubKey for handlers to
+// attribute their audit records to.
+func WriteAuth(client *authz.Client) gin.HandlerFunc <span class="cov10" title="4">{
+        return func(c *gin.Context) </span><span class="cov10" title="4">{
+                token := bearerToken(c)
+                if token == "" </span><span class="cov1" title="1">{
                         unauthorized(c)
                         return
                 }</span>
 
-                <span class="cov1" title="1">c.Set(ActingUserSubKey, actingUserSub)
+                <span class="cov8" title="3">result, err := client.Check(c.Request.Context(), token, constants.ServiceName)
+                if err != nil </span><span class="cov1" title="1">{
+                        if _, ok := err.(authz.InvalidTokenError); ok </span><span class="cov1" title="1">{
+                                unauthorized(c)
+                                return
+                        }</span>
+                        <span class="cov0" title="0">logging.Logger.Error("authz check failed", "error", err.Error())
+                        c.AbortWithStatusJSON(http.StatusServiceUnavailable, apiv.ErrorVO{
+                                Error:   "authz_unavailable",
+                                Message: "Unable to verify authorization",
+                        })
+                        return</span>
+                }
+
+                <span class="cov5" title="2">if !result.Allowed || !authz.HasRole(result.Roles, authz.RoleAdmin) </span><span class="cov1" title="1">{
+                        forbidden(c)
+                        return
+                }</span>
+
+                <span class="cov1" title="1">c.Set(ActingUserSubKey, result.Sub)
                 c.Next()</span>
         }
 }
 
-func bearerToken(c *gin.Context) string <span class="cov10" title="8">{
+func bearerToken(c *gin.Context) string <span class="cov10" title="4">{
         auth := c.GetHeader("Authorization")
-        if !strings.HasPrefix(auth, bearerPrefix) </span><span class="cov7" title="5">{
+        if !strings.HasPrefix(auth, bearerPrefix) </span><span class="cov1" title="1">{
                 return ""
         }</span>
-        <span class="cov5" title="3">return strings.TrimPrefix(auth, bearerPrefix)</span>
+        <span class="cov8" title="3">return strings.TrimPrefix(auth, bearerPrefix)</span>
 }
 
-func unauthorized(c *gin.Context) <span class="cov7" title="5">{
+func unauthorized(c *gin.Context) <span class="cov5" title="2">{
         c.AbortWithStatusJSON(http.StatusUnauthorized, apiv.ErrorVO{
                 Error:   "unauthorized",
                 Message: "missing or invalid credentials",
