@@ -58,12 +58,11 @@ type updateBannerRequest struct {
 // Create a banner message.
 //
 //	@Summary		Create a banner message
-//	@Description	Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires internal-service write auth.
+//	@Description	Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires a forwarded user bearer token carrying the admin role.
 //	@Tags			banners
 //	@Accept			json
 //	@Produce		json
-//	@Param			X-Internal-Service-Token	header		string				true	"Shared internal-service secret"
-//	@Param			X-Acting-User-Sub			header		string				true	"Acting admin's Auth0 sub, for audit attribution"
+//	@Param			Authorization				header		string				true	"Bearer user access token"
 //	@Param			banner						body		createBannerRequest	true	"Banner message"
 //	@Success		201							{object}	models.BannerMessage
 //	@Failure		400							{object}	apiv.ErrorVO
@@ -216,12 +215,11 @@ func listBanners(c *gin.Context) {
 // Update a banner message.
 //
 //	@Summary		Update a banner message
-//	@Description	Replaces the mutable fields of an existing banner message. expires_at is required. Requires internal-service write auth.
+//	@Description	Replaces the mutable fields of an existing banner message. expires_at is required. Requires a forwarded user bearer token carrying the admin role.
 //	@Tags			banners
 //	@Accept			json
 //	@Produce		json
-//	@Param			X-Internal-Service-Token	header		string				true	"Shared internal-service secret"
-//	@Param			X-Acting-User-Sub			header		string				true	"Acting admin's Auth0 sub, for audit attribution"
+//	@Param			Authorization				header		string				true	"Bearer user access token"
 //	@Param			id							path		string				true	"Banner ID"
 //	@Param			banner						body		updateBannerRequest	true	"Updated banner message"
 //	@Success		200							{object}	models.BannerMessage
@@ -302,10 +300,9 @@ func updateBanner(c *gin.Context) {
 // Delete a banner message.
 //
 //	@Summary		Delete a banner message
-//	@Description	Deletes a banner message; it is immediately excluded from subsequent queries. Requires internal-service write auth.
+//	@Description	Deletes a banner message; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.
 //	@Tags			banners
-//	@Param			X-Internal-Service-Token	header	string	true	"Shared internal-service secret"
-//	@Param			X-Acting-User-Sub			header	string	true	"Acting admin's Auth0 sub, for audit attribution"
+//	@Param			Authorization				header	string	true	"Bearer user access token"
 //	@Param			id							path	string	true	"Banner ID"
 //	@Success		204							{object}	interface{}
 //	@Failure		400							{object}	apiv.ErrorVO

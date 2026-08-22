@@ -12,13 +12,11 @@ import (
 
 // TestWriteRoutesRequireAuth registers every route admin-api exposes (the
 // same SetupHandlers wiring main.go uses) and asserts every write route
-// (POST/PUT/DELETE) 401s without the internal-service-token/acting-user-sub
-// headers, while every read route (GET) is reachable without them - none of
-// these requests reach the database, since the middleware short-circuits
-// unauthenticated writes and the unscoped GET request is rejected by
-// listBanners' own validation before any query runs.
+// (POST/PUT/DELETE) 401s without credentials, while every read route (GET) is
+// reachable without them - none of these requests reach the database, since the
+// middleware short-circuits unauthenticated writes and the unscoped GET request is
+// rejected by listBanners' own validation before any query runs.
 func TestWriteRoutesRequireAuth(t *testing.T) {
-	t.Setenv("INTERNAL_SERVICE_TOKEN", "")
 	logging.Init()
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

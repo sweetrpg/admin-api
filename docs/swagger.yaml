@@ -228,16 +228,12 @@ paths:
       consumes:
       - application/json
       description: Creates a new admin banner message. expires_at is required; a banner
-        without one is rejected. Requires internal-service write auth.
+        without one is rejected. Requires a forwarded user bearer token carrying the
+        admin role.
       parameters:
-      - description: Shared internal-service secret
+      - description: Bearer user access token
         in: header
-        name: X-Internal-Service-Token
-        required: true
-        type: string
-      - description: Acting admin's Auth0 sub, for audit attribution
-        in: header
-        name: X-Acting-User-Sub
+        name: Authorization
         required: true
         type: string
       - description: Banner message
@@ -271,16 +267,11 @@ paths:
   /banners/{id}:
     delete:
       description: Deletes a banner message; it is immediately excluded from subsequent
-        queries. Requires internal-service write auth.
+        queries. Requires a forwarded user bearer token carrying the admin role.
       parameters:
-      - description: Shared internal-service secret
+      - description: Bearer user access token
         in: header
-        name: X-Internal-Service-Token
-        required: true
-        type: string
-      - description: Acting admin's Auth0 sub, for audit attribution
-        in: header
-        name: X-Acting-User-Sub
+        name: Authorization
         required: true
         type: string
       - description: Banner ID
@@ -315,16 +306,11 @@ paths:
       consumes:
       - application/json
       description: Replaces the mutable fields of an existing banner message. expires_at
-        is required. Requires internal-service write auth.
+        is required. Requires a forwarded user bearer token carrying the admin role.
       parameters:
-      - description: Shared internal-service secret
+      - description: Bearer user access token
         in: header
-        name: X-Internal-Service-Token
-        required: true
-        type: string
-      - description: Acting admin's Auth0 sub, for audit attribution
-        in: header
-        name: X-Acting-User-Sub
+        name: Authorization
         required: true
         type: string
       - description: Banner ID
@@ -389,16 +375,12 @@ paths:
       - application/json
       description: Creates a maintenance-mode record for the given scope, or updates
         the existing record for that scope in place if one already exists - at most
-        one record per scope is kept. Requires internal-service write auth.
+        one record per scope is kept. Requires a forwarded user bearer token carrying
+        the admin role.
       parameters:
-      - description: Shared internal-service secret
+      - description: Bearer user access token
         in: header
-        name: X-Internal-Service-Token
-        required: true
-        type: string
-      - description: Acting admin's Auth0 sub, for audit attribution
-        in: header
-        name: X-Acting-User-Sub
+        name: Authorization
         required: true
         type: string
       - description: Maintenance-mode record
@@ -436,16 +418,12 @@ paths:
   /maintenance-modes/{id}:
     delete:
       description: Deletes a maintenance-mode record; it is immediately excluded from
-        subsequent queries. Requires internal-service write auth.
+        subsequent queries. Requires a forwarded user bearer token carrying the admin
+        role.
       parameters:
-      - description: Shared internal-service secret
+      - description: Bearer user access token
         in: header
-        name: X-Internal-Service-Token
-        required: true
-        type: string
-      - description: Acting admin's Auth0 sub, for audit attribution
-        in: header
-        name: X-Acting-User-Sub
+        name: Authorization
         required: true
         type: string
       - description: Maintenance-mode record ID
@@ -480,16 +458,11 @@ paths:
       consumes:
       - application/json
       description: Replaces the mutable fields of an existing maintenance-mode record.
-        Requires internal-service write auth.
+        Requires a forwarded user bearer token carrying the admin role.
       parameters:
-      - description: Shared internal-service secret
+      - description: Bearer user access token
         in: header
-        name: X-Internal-Service-Token
-        required: true
-        type: string
-      - description: Acting admin's Auth0 sub, for audit attribution
-        in: header
-        name: X-Acting-User-Sub
+        name: Authorization
         required: true
         type: string
       - description: Maintenance-mode record ID

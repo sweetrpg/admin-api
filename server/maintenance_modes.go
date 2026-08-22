@@ -47,12 +47,11 @@ type maintenanceModeRequest struct {
 // Create or update a maintenance-mode record for a scope.
 //
 //	@Summary		Create or update a maintenance-mode record
-//	@Description	Creates a maintenance-mode record for the given scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires internal-service write auth.
+//	@Description	Creates a maintenance-mode record for the given scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires a forwarded user bearer token carrying the admin role.
 //	@Tags			maintenance-modes
 //	@Accept			json
 //	@Produce		json
-//	@Param			X-Internal-Service-Token	header		string					true	"Shared internal-service secret"
-//	@Param			X-Acting-User-Sub			header		string					true	"Acting admin's Auth0 sub, for audit attribution"
+//	@Param			Authorization				header					string	true	"Bearer user access token"
 //	@Param			maintenance_mode			body		maintenanceModeRequest	true	"Maintenance-mode record"
 //	@Success		200							{object}	models.MaintenanceMode
 //	@Success		201							{object}	models.MaintenanceMode
@@ -215,12 +214,11 @@ func listActiveMaintenanceModes(c *gin.Context) {
 // Update a maintenance-mode record by id.
 //
 //	@Summary		Update a maintenance-mode record
-//	@Description	Replaces the mutable fields of an existing maintenance-mode record. Requires internal-service write auth.
+//	@Description	Replaces the mutable fields of an existing maintenance-mode record. Requires a forwarded user bearer token carrying the admin role.
 //	@Tags			maintenance-modes
 //	@Accept			json
 //	@Produce		json
-//	@Param			X-Internal-Service-Token	header		string					true	"Shared internal-service secret"
-//	@Param			X-Acting-User-Sub			header		string					true	"Acting admin's Auth0 sub, for audit attribution"
+//	@Param			Authorization				header					string	true	"Bearer user access token"
 //	@Param			id							path		string					true	"Maintenance-mode record ID"
 //	@Param			maintenance_mode			body		maintenanceModeRequest	true	"Updated maintenance-mode record"
 //	@Success		200							{object}	models.MaintenanceMode
@@ -301,10 +299,9 @@ func updateMaintenanceMode(c *gin.Context) {
 // Delete a maintenance-mode record.
 //
 //	@Summary		Delete a maintenance-mode record
-//	@Description	Deletes a maintenance-mode record; it is immediately excluded from subsequent queries. Requires internal-service write auth.
+//	@Description	Deletes a maintenance-mode record; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.
 //	@Tags			maintenance-modes
-//	@Param			X-Internal-Service-Token	header	string	true	"Shared internal-service secret"
-//	@Param			X-Acting-User-Sub			header	string	true	"Acting admin's Auth0 sub, for audit attribution"
+//	@Param			Authorization				header	string	true	"Bearer user access token"
 //	@Param			id							path	string	true	"Maintenance-mode record ID"
 //	@Success		204							{object}	interface{}
 //	@Failure		400							{object}	apiv.ErrorVO
