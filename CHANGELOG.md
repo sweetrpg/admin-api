@@ -1,4 +1,13 @@
 
+## 0.8.3 - 2026-08-28
+
+### Fixed
+- Exclude expired records from active filter
+
+
+## 0.8.2 - 2026-08-25
+
+
 ## 0.8.2 - 2026-08-22
 
 ### Changed
