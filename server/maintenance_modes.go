@@ -356,8 +356,9 @@ func extractServiceScopeValues(scopes []string) []string {
 	return serviceValues
 }
 
-// buildActiveMaintenanceModeFilter builds the Mongo filter for enabled records
-// matching any of the requested scopes; platform-scoped records are always included.
+// buildActiveMaintenanceModeFilter builds the Mongo filter for enabled records matching any of
+// the requested scopes, whose window actually contains now - `enabled` alone is not enough,
+// since it doesn't auto-clear once `ends_at` passes (see models.MaintenanceMode).
 func buildActiveMaintenanceModeFilter(scopes []string) bson.D {
 	serviceValues := extractServiceScopeValues(scopes)
 
@@ -369,9 +370,17 @@ func buildActiveMaintenanceModeFilter(scopes []string) bson.D {
 		})
 	}
 
+	now := time.Now()
+	endsOr := bson.A{
+		bson.D{{Key: "ends_at", Value: nil}},
+		bson.D{{Key: "ends_at", Value: bson.D{{Key: "$gt", Value: now}}}},
+	}
+
 	return bson.D{
 		{Key: "enabled", Value: true},
+		{Key: "starts_at", Value: bson.D{{Key: "$lte", Value: now}}},
 		{Key: "$or", Value: scopeOr},
+		{Key: "$and", Value: bson.A{bson.D{{Key: "$or", Value: endsOr}}}},
 	}
 }
 
