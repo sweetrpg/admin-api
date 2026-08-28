@@ -2,6 +2,7 @@ package server
 
 import (
 	"testing"
+	"time"
 
 	"github.com/sweetrpg/admin-api/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -89,6 +90,67 @@ func TestBuildActiveMaintenanceModeFilter_ServiceScopeOmittedWhenNotRequested(t 
 	if len(scopeOr) != 1 {
 		t.Errorf("buildActiveMaintenanceModeFilter() $or = %v, want exactly the platform clause", scopeOr)
 	}
+}
+
+// TestBuildActiveMaintenanceModeFilter_ExcludesPastEndDate reproduces the bug where a
+// record with enabled=true but an ends_at in the past still matched "active" - enabled
+// never auto-clears on expiry (see models.MaintenanceMode.isStale), so the filter itself
+// must exclude expired windows.
+func TestBuildActiveMaintenanceModeFilter_ExcludesPastEndDate(t *testing.T) {
+	filter := buildActiveMaintenanceModeFilter([]string{"platform"})
+
+	for _, elem := range filter {
+		if elem.Key != "$and" {
+			continue
+		}
+		andClauses, ok := elem.Value.(bson.A)
+		if !ok || len(andClauses) == 0 {
+			t.Fatalf("$and clause has unexpected shape %v", elem.Value)
+		}
+		endsDoc, ok := andClauses[0].(bson.D)
+		if !ok {
+			t.Fatalf("$and[0] has unexpected type %T", andClauses[0])
+		}
+		for _, e := range endsDoc {
+			if e.Key != "$or" {
+				continue
+			}
+			endsOr, ok := e.Value.(bson.A)
+			if !ok {
+				t.Fatalf("ends_at $or has unexpected type %T", e.Value)
+			}
+			foundNull, foundGt := false, false
+			for _, clause := range endsOr {
+				doc, ok := clause.(bson.D)
+				if !ok {
+					continue
+				}
+				for _, d := range doc {
+					if d.Key != "ends_at" {
+						continue
+					}
+					if d.Value == nil {
+						foundNull = true
+					}
+					if sub, ok := d.Value.(bson.D); ok {
+						for _, s := range sub {
+							if s.Key == "$gt" {
+								if _, ok := s.Value.(time.Time); ok {
+									foundGt = true
+								}
+							}
+						}
+					}
+				}
+			}
+			if !foundNull || !foundGt {
+				t.Errorf("ends_at $or = %v, want a null clause and a $gt-now clause", endsOr)
+			}
+			return
+		}
+		t.Fatalf("$and clause missing nested $or: %v", andClauses)
+	}
+	t.Fatalf("buildActiveMaintenanceModeFilter() filter = %v, want an $and clause excluding expired records", filter)
 }
 
 // scopeOrClause extracts the $or clause from a filter built by
