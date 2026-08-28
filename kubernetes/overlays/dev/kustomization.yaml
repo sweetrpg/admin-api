@@ -17,11 +17,13 @@ resources:
 
 labels:
     - pairs:
-          app: api
-          version: v1
-          platform: sweetrpg
-          package: admin
-          component: api
+          app.kubernetes.io/name: admin-api
+          app.kubernetes.io/version: v1
+          app.kubernetes.io/component: api
+          app.kubernetes.io/part-of: admin
+          com.sweetrpg/env: dev
+      includeSelectors: false
+      includeTemplates: true
 
 generatorOptions:
     disableNameSuffixHash: true
