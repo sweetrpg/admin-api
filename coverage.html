@@ -71,7 +71,7 @@
 				
 				<option value="file7">github.com/sweetrpg/admin-api/server/handlers.go (100.0%)</option>
 				
-				<option value="file8">github.com/sweetrpg/admin-api/server/maintenance_modes.go (14.5%)</option>
+				<option value="file8">github.com/sweetrpg/admin-api/server/maintenance_modes.go (15.5%)</option>
 				
 				<option value="file9">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (87.5%)</option>
 				
@@ -2354,20 +2354,21 @@ func deleteMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
 
 // extractServiceScopeValues returns the service names from a list of "service:&lt;name&gt;"
 // scope query params, ignoring "platform" and any other scope type.
-func extractServiceScopeValues(scopes []string) []string <span class="cov8" title="7">{
+func extractServiceScopeValues(scopes []string) []string <span class="cov8" title="8">{
         var serviceValues []string
-        for _, raw := range scopes </span><span class="cov9" title="9">{
+        for _, raw := range scopes </span><span class="cov9" title="10">{
                 scopeType, scopeValue := parseMaintenanceScope(raw)
-                if scopeType == models.MaintenanceScopeService &amp;&amp; scopeValue != "" </span><span class="cov7" title="5">{
+                if scopeType == models.MaintenanceScopeService &amp;&amp; scopeValue != "" </span><span class="cov6" title="5">{
                         serviceValues = append(serviceValues, scopeValue)
                 }</span>
         }
-        <span class="cov8" title="7">return serviceValues</span>
+        <span class="cov8" title="8">return serviceValues</span>
 }
 
-// buildActiveMaintenanceModeFilter builds the Mongo filter for enabled records
-// matching any of the requested scopes; platform-scoped records are always included.
-func buildActiveMaintenanceModeFilter(scopes []string) bson.D <span class="cov5" title="3">{
+// buildActiveMaintenanceModeFilter builds the Mongo filter for enabled records matching any of
+// the requested scopes, whose window actually contains now - `enabled` alone is not enough,
+// since it doesn't auto-clear once `ends_at` passes (see models.MaintenanceMode).
+func buildActiveMaintenanceModeFilter(scopes []string) bson.D <span class="cov6" title="4">{
         serviceValues := extractServiceScopeValues(scopes)
 
         scopeOr := bson.A{bson.D{{Key: "scope_type", Value: models.MaintenanceScopePlatform}}}
@@ -2378,22 +2379,30 @@ func buildActiveMaintenanceModeFilter(scopes []string) bson.D <span class="cov5"
                 })
         }</span>
 
-        <span class="cov5" title="3">return bson.D{
+        <span class="cov6" title="4">now := time.Now()
+        endsOr := bson.A{
+                bson.D{{Key: "ends_at", Value: nil}},
+                bson.D{{Key: "ends_at", Value: bson.D{{Key: "$gt", Value: now}}}},
+        }
+
+        return bson.D{
                 {Key: "enabled", Value: true},
+                {Key: "starts_at", Value: bson.D{{Key: "$lte", Value: now}}},
                 {Key: "$or", Value: scopeOr},
+                {Key: "$and", Value: bson.A{bson.D{{Key: "$or", Value: endsOr}}}},
         }</span>
 }
 
 // parseMaintenanceScope splits a "type" or "type:value" scope query param into its
 // parts. An unrecognized type is passed through as-is and matched against nothing,
 // since the filter builder only special-cases service.
-func parseMaintenanceScope(raw string) (models.MaintenanceScopeType, string) <span class="cov10" title="11">{
+func parseMaintenanceScope(raw string) (models.MaintenanceScopeType, string) <span class="cov10" title="12">{
         parts := strings.SplitN(raw, ":", 2)
         scopeType := models.MaintenanceScopeType(parts[0])
         if len(parts) == 2 </span><span class="cov7" title="6">{
                 return scopeType, parts[1]
         }</span>
-        <span class="cov7" title="5">return scopeType, ""</span>
+        <span class="cov7" title="6">return scopeType, ""</span>
 }
 </pre>
 		
