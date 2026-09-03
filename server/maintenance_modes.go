@@ -67,6 +67,7 @@ func createMaintenanceMode(c *gin.Context) {
 	}
 
 	now := time.Now().UTC()
+	sub := c.GetString(middleware.ActingUserSubKey)
 	record := &models.MaintenanceMode{
 		ScopeType:   req.ScopeType,
 		ScopeValue:  req.ScopeValue,
@@ -75,7 +76,9 @@ func createMaintenanceMode(c *gin.Context) {
 		EndsAt:      req.EndsAt,
 		Label:       req.Label,
 		Description: req.Description,
+		CreatedBy:   sub,
 		CreatedAt:   now,
+		UpdatedBy:   sub,
 		UpdatedAt:   now,
 	}
 
@@ -108,6 +111,7 @@ func createMaintenanceMode(c *gin.Context) {
 	if existing != nil {
 		record.ID = existing.ID
 		record.CreatedAt = existing.CreatedAt
+		record.CreatedBy = existing.CreatedBy
 		if _, _, err := database.Update(constants.MaintenanceModeCollection, record.ID, record); err != nil {
 			logging.Logger.Error("Failed to update maintenance mode", "error", err.Error())
 			completeAudit(auditID, models.AuditFailed, err.Error())
@@ -260,7 +264,9 @@ func updateMaintenanceMode(c *gin.Context) {
 		EndsAt:      req.EndsAt,
 		Label:       req.Label,
 		Description: req.Description,
+		CreatedBy:   existing.CreatedBy,
 		CreatedAt:   existing.CreatedAt,
+		UpdatedBy:   c.GetString(middleware.ActingUserSubKey),
 		UpdatedAt:   time.Now().UTC(),
 	}
 

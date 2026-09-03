@@ -573,6 +573,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "created_by": {
+                    "description": "Platform audit fields (PADR-0001); hard-delete record (PADR-0027), no deleted_* pair.",
                     "type": "string"
                 },
                 "expires_at": {
@@ -598,6 +599,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
                 }
             }
         },
@@ -605,6 +609,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "description": "Platform audit fields (PADR-0001); hard-delete record (PADR-0027), no deleted_* pair.",
                     "type": "string"
                 },
                 "description": {
@@ -632,6 +640,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
                     "type": "string"
                 }
             }
@@ -676,16 +687,12 @@ const docTemplate = `{
         "server.createBannerRequest": {
             "type": "object",
             "required": [
-                "created_by",
                 "expires_at",
                 "message",
                 "scope_type",
                 "severity"
             ],
             "properties": {
-                "created_by": {
-                    "type": "string"
-                },
                 "expires_at": {
                     "type": "string"
                 },

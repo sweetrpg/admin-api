@@ -4,6 +4,8 @@ definitions:
       created_at:
         type: string
       created_by:
+        description: Platform audit fields (PADR-0001); hard-delete record (PADR-0027),
+          no deleted_* pair.
         type: string
       expires_at:
         type: string
@@ -21,10 +23,16 @@ definitions:
         type: string
       updated_at:
         type: string
+      updated_by:
+        type: string
     type: object
   models.MaintenanceMode:
     properties:
       created_at:
+        type: string
+      created_by:
+        description: Platform audit fields (PADR-0001); hard-delete record (PADR-0027),
+          no deleted_* pair.
         type: string
       description:
         type: string
@@ -43,6 +51,8 @@ definitions:
       starts_at:
         type: string
       updated_at:
+        type: string
+      updated_by:
         type: string
     type: object
   models.MaintenanceScopeType:
@@ -75,8 +85,6 @@ definitions:
     - SeverityCritical
   server.createBannerRequest:
     properties:
-      created_by:
-        type: string
       expires_at:
         type: string
       message:
@@ -90,7 +98,6 @@ definitions:
       starts_at:
         type: string
     required:
-    - created_by
     - expires_at
     - message
     - scope_type
