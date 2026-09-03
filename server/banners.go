@@ -40,7 +40,6 @@ type createBannerRequest struct {
 	Message    string           `json:"message" binding:"required"`
 	StartsAt   *time.Time       `json:"starts_at"`
 	ExpiresAt  time.Time        `json:"expires_at" binding:"required"`
-	CreatedBy  string           `json:"created_by" binding:"required"`
 }
 
 // updateBannerRequest is the payload accepted by PUT /banners/:id. created_by and
@@ -77,6 +76,7 @@ func createBanner(c *gin.Context) {
 	}
 
 	now := time.Now().UTC()
+	sub := c.GetString(middleware.ActingUserSubKey)
 	banner := &models.BannerMessage{
 		ScopeType:  req.ScopeType,
 		ScopeValue: req.ScopeValue,
@@ -84,8 +84,9 @@ func createBanner(c *gin.Context) {
 		Message:    req.Message,
 		StartsAt:   req.StartsAt,
 		ExpiresAt:  req.ExpiresAt,
-		CreatedBy:  req.CreatedBy,
+		CreatedBy:  sub,
 		CreatedAt:  now,
+		UpdatedBy:  sub,
 		UpdatedAt:  now,
 	}
 
@@ -262,6 +263,7 @@ func updateBanner(c *gin.Context) {
 		ExpiresAt:  req.ExpiresAt,
 		CreatedBy:  existing.CreatedBy,
 		CreatedAt:  existing.CreatedAt,
+		UpdatedBy:  c.GetString(middleware.ActingUserSubKey),
 		UpdatedAt:  time.Now().UTC(),
 	}
 
