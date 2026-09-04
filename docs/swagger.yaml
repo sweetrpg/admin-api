@@ -1,4 +1,27 @@
 definitions:
+  models.AppCardStatus:
+    properties:
+      created_at:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: string
+      label:
+        type: string
+      scope_type:
+        $ref: '#/definitions/models.AppCardStatusScopeType'
+      scope_value:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.AppCardStatusScopeType:
+    enum:
+    - service
+    type: string
+    x-enum-varnames:
+    - AppCardStatusScopeService
   models.BannerMessage:
     properties:
       created_at:
@@ -83,6 +106,18 @@ definitions:
     - SeverityInfo
     - SeverityWarning
     - SeverityCritical
+  server.appCardStatusRequest:
+    properties:
+      enabled:
+        type: boolean
+      label:
+        type: string
+      scope_value:
+        type: string
+    required:
+    - label
+    - scope_value
+    type: object
   server.createBannerRequest:
     properties:
       expires_at:
@@ -189,6 +224,191 @@ info:
   title: Admin API service
   version: "1.0"
 paths:
+  /app-card-statuses:
+    get:
+      description: Returns every app-card-status record regardless of enabled state,
+        for admin-web's management view.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.AppCardStatus'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: List app-card-status records
+      tags:
+      - app-card-statuses
+    post:
+      consumes:
+      - application/json
+      description: Creates an app-card-status record for the given service scope,
+        or updates the existing record for that scope in place if one already exists
+        - at most one record per scope is kept. Requires a forwarded user bearer token
+        carrying the admin role.
+      parameters:
+      - description: Bearer user access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: App card status record
+        in: body
+        name: app_card_status
+        required: true
+        schema:
+          $ref: '#/definitions/server.appCardStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AppCardStatus'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.AppCardStatus'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: Create or update an app-card-status record
+      tags:
+      - app-card-statuses
+  /app-card-statuses/{id}:
+    delete:
+      description: Deletes an app-card-status record; it is immediately excluded from
+        subsequent queries. Requires a forwarded user bearer token carrying the admin
+        role.
+      parameters:
+      - description: Bearer user access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: App card status record ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema: {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: Delete an app-card-status record
+      tags:
+      - app-card-statuses
+    put:
+      consumes:
+      - application/json
+      description: Replaces the mutable fields of an existing app-card-status record.
+        Requires a forwarded user bearer token carrying the admin role.
+      parameters:
+      - description: Bearer user access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: App card status record ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated app card status record
+        in: body
+        name: app_card_status
+        required: true
+        schema:
+          $ref: '#/definitions/server.appCardStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AppCardStatus'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: Update an app-card-status record
+      tags:
+      - app-card-statuses
+  /app-card-statuses/active:
+    get:
+      description: Returns enabled app-card-status records matching any of the requested
+        service scopes. scope values look like "service:catalog".
+      parameters:
+      - collectionFormat: csv
+        description: Repeated scope filter, e.g. scope=service:catalog&scope=service:shelf
+        in: query
+        items:
+          type: string
+        name: scope
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.AppCardStatus'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/vo.ErrorVO'
+      summary: List active app-card-status records for a set of service scopes
+      tags:
+      - app-card-statuses
   /banners:
     get:
       description: Default mode returns active (started, not expired) banners matching

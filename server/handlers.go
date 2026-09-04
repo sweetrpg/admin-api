@@ -8,5 +8,6 @@ import (
 func SetupHandlers(g *gin.Engine, authzClient *authz.Client) {
 	setupBannerHandlers(g, authzClient)
 	setupMaintenanceModeHandlers(g, authzClient)
+	setupAppCardStatusHandlers(g, authzClient)
 	setupStatusHandlers(g)
 }
