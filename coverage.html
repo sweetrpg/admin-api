@@ -63,21 +63,25 @@
 				
 				<option value="file3">github.com/sweetrpg/admin-api/docs/docs.go (0.0%)</option>
 				
-				<option value="file4">github.com/sweetrpg/admin-api/models/audit.go (0.0%)</option>
+				<option value="file4">github.com/sweetrpg/admin-api/models/app_card_status.go (66.7%)</option>
 				
-				<option value="file5">github.com/sweetrpg/admin-api/models/banner.go (88.9%)</option>
+				<option value="file5">github.com/sweetrpg/admin-api/models/audit.go (0.0%)</option>
 				
-				<option value="file6">github.com/sweetrpg/admin-api/models/maintenance_mode.go (85.7%)</option>
+				<option value="file6">github.com/sweetrpg/admin-api/models/banner.go (88.9%)</option>
 				
-				<option value="file7">github.com/sweetrpg/admin-api/server/banners.go (11.9%)</option>
+				<option value="file7">github.com/sweetrpg/admin-api/models/maintenance_mode.go (85.7%)</option>
 				
-				<option value="file8">github.com/sweetrpg/admin-api/server/handlers.go (100.0%)</option>
+				<option value="file8">github.com/sweetrpg/admin-api/server/app_card_statuses.go (10.8%)</option>
 				
-				<option value="file9">github.com/sweetrpg/admin-api/server/maintenance_modes.go (15.3%)</option>
+				<option value="file9">github.com/sweetrpg/admin-api/server/banners.go (11.9%)</option>
 				
-				<option value="file10">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (87.5%)</option>
+				<option value="file10">github.com/sweetrpg/admin-api/server/handlers.go (100.0%)</option>
 				
-				<option value="file11">github.com/sweetrpg/admin-api/server/status.go (45.5%)</option>
+				<option value="file11">github.com/sweetrpg/admin-api/server/maintenance_modes.go (15.3%)</option>
+				
+				<option value="file12">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (87.5%)</option>
+				
+				<option value="file13">github.com/sweetrpg/admin-api/server/status.go (45.5%)</option>
 				
 				</select>
 			</div>
@@ -297,6 +301,9 @@ func main() <span class="cov0" title="0">{
         }</span>
         <span class="cov0" title="0">if err := models.EnsureMaintenanceModeIndexes(context.Background()); err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to ensure maintenance-mode indexes", "error", err.Error())
+        }</span>
+        <span class="cov0" title="0">if err := models.EnsureAppCardStatusIndexes(context.Background()); err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to ensure app-card-status indexes", "error", err.Error())
         }</span>
 
         // Actuator
@@ -603,6 +610,271 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/app-card-statuses": {
+            "get": {
+                "description": "Returns every app-card-status record regardless of enabled state, for admin-web's management view.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "app-card-statuses"
+                ],
+                "summary": "List app-card-status records",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.AppCardStatus"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates an app-card-status record for the given service scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires a forwarded user bearer token carrying the admin role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "app-card-statuses"
+                ],
+                "summary": "Create or update an app-card-status record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "App card status record",
+                        "name": "app_card_status",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.appCardStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AppCardStatus"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.AppCardStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/app-card-statuses/active": {
+            "get": {
+                "description": "Returns enabled app-card-status records matching any of the requested service scopes. scope values look like \"service:catalog\".",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "app-card-statuses"
+                ],
+                "summary": "List active app-card-status records for a set of service scopes",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Repeated scope filter, e.g. scope=service:catalog\u0026scope=service:shelf",
+                        "name": "scope",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.AppCardStatus"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/app-card-statuses/{id}": {
+            "put": {
+                "description": "Replaces the mutable fields of an existing app-card-status record. Requires a forwarded user bearer token carrying the admin role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "app-card-statuses"
+                ],
+                "summary": "Update an app-card-status record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "App card status record ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated app card status record",
+                        "name": "app_card_status",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.appCardStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AppCardStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes an app-card-status record; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.",
+                "tags": [
+                    "app-card-statuses"
+                ],
+                "summary": "Delete an app-card-status record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "App card status record ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {}
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
         "/banners": {
             "get": {
                 "description": "Default mode returns active (started, not expired) banners matching any of the requested scopes, most-severe-first; platform-scoped banners are always included. scope values look like \"platform\", \"service:catalog\", or \"page:/catalog/browse\". Pass include_inactive=true (admin-web's management view) to instead return every banner regardless of scope or expiration - scope params are ignored in that mode.",
@@ -1145,6 +1417,41 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.AppCardStatus": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "scope_type": {
+                    "$ref": "#/definitions/models.AppCardStatusScopeType"
+                },
+                "scope_value": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.AppCardStatusScopeType": {
+            "type": "string",
+            "enum": [
+                "service"
+            ],
+            "x-enum-varnames": [
+                "AppCardStatusScopeService"
+            ]
+        },
         "models.BannerMessage": {
             "type": "object",
             "properties": {
@@ -1262,6 +1569,24 @@ const docTemplate = `{
                 "SeverityWarning",
                 "SeverityCritical"
             ]
+        },
+        "server.appCardStatusRequest": {
+            "type": "object",
+            "required": [
+                "label",
+                "scope_value"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "scope_value": {
+                    "type": "string"
+                }
+            }
         },
         "server.createBannerRequest": {
             "type": "object",
@@ -1427,6 +1752,82 @@ func init() <span class="cov0" title="0">{
 
 import (
         "context"
+        "errors"
+        "time"
+        "unicode/utf8"
+
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/bson/primitive"
+        "go.mongodb.org/mongo-driver/mongo"
+        "go.mongodb.org/mongo-driver/mongo/options"
+)
+
+// AppCardStatusScopeType identifies what an app-card-status record applies to.
+type AppCardStatusScopeType string
+
+const (
+        AppCardStatusScopeService AppCardStatusScopeType = "service"
+)
+
+func (s AppCardStatusScopeType) valid() bool <span class="cov10" title="8">{
+        switch s </span>{
+        case AppCardStatusScopeService:<span class="cov10" title="8">
+                return true</span>
+        default:<span class="cov0" title="0">
+                return false</span>
+        }
+}
+
+// AppCardStatus is the MongoDB document for a service-scoped app card status.
+// It controls the enabled/disabled state and display label for a service's app card.
+type AppCardStatus struct {
+        ID         primitive.ObjectID     `bson:"_id,omitempty" json:"id"`
+        ScopeType  AppCardStatusScopeType `bson:"scope_type" json:"scope_type"`
+        ScopeValue string                 `bson:"scope_value" json:"scope_value"`
+        Enabled    bool                   `bson:"enabled" json:"enabled"`
+        Label      string                 `bson:"label" json:"label"`
+        CreatedAt  time.Time              `bson:"created_at" json:"created_at"`
+        UpdatedAt  time.Time              `bson:"updated_at" json:"updated_at"`
+}
+
+// Validate checks that the record satisfies the invariants required by the spec:
+// scope_value must not be empty, label must not be empty and must not exceed 24 runes.
+func (a *AppCardStatus) Validate() error <span class="cov10" title="8">{
+        if !a.ScopeType.valid() </span><span class="cov0" title="0">{
+                return errors.New("scope_type must be service")
+        }</span>
+        <span class="cov10" title="8">if a.ScopeValue == "" </span><span class="cov1" title="1">{
+                return errors.New("scope_value is required")
+        }</span>
+        <span class="cov9" title="7">if a.Label == "" </span><span class="cov1" title="1">{
+                return errors.New("label is required")
+        }</span>
+        <span class="cov8" title="6">if utf8.RuneCountInString(a.Label) &gt; 24 </span><span class="cov4" title="2">{
+                return errors.New("label must not exceed 24 characters")
+        }</span>
+        <span class="cov7" title="4">return nil</span>
+}
+
+// EnsureAppCardStatusIndexes creates a unique compound index on (scope_type,
+// scope_value) so at most one record exists per scope. Safe to call on every
+// startup - CreateOne is idempotent for an identical index definition.
+func EnsureAppCardStatusIndexes(ctx context.Context) error <span class="cov0" title="0">{
+        collection := database.Db.Collection(constants.AppCardStatusCollection)
+
+        _, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+                Keys:    bson.D{{Key: "scope_type", Value: 1}, {Key: "scope_value", Value: 1}},
+                Options: options.Index().SetUnique(true),
+        })
+        return err
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package models
+
+import (
+        "context"
         "time"
 
         "github.com/sweetrpg/admin-api/constants"
@@ -1520,7 +1921,7 @@ func EnsureAuditIndexes(ctx context.Context) error <span class="cov0" title="0">
 }</span>
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">// Package models defines the persisted document shapes for admin-api.
+		<pre class="file" id="file6" style="display: none">// Package models defines the persisted document shapes for admin-api.
 package models
 
 import (
@@ -1653,7 +2054,7 @@ func EnsureIndexes(ctx context.Context) error <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">package models
+		<pre class="file" id="file7" style="display: none">package models
 
 import (
         "context"
@@ -1750,7 +2151,372 @@ func EnsureMaintenanceModeIndexes(ctx context.Context) error <span class="cov0" 
 }</span>
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package server
+		<pre class="file" id="file8" style="display: none">package server
+
+import (
+        "net/http"
+        "strings"
+        "time"
+
+        "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/authz"
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/admin-api/models"
+        "github.com/sweetrpg/admin-api/server/middleware"
+        apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/common.go/logging"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/bson/primitive"
+        "go.opentelemetry.io/otel"
+        "go.opentelemetry.io/otel/attribute"
+        oteltrace "go.opentelemetry.io/otel/trace"
+)
+
+func setupAppCardStatusHandlers(g *gin.Engine, authzClient *authz.Client) <span class="cov1" title="1">{
+        logging.Logger.Info("Setting up app-card-status endpoint handlers...")
+
+        g.GET("/app-card-statuses", listAppCardStatuses)
+        g.GET("/app-card-statuses/active", listActiveAppCardStatuses)
+
+        writes := g.Group("/app-card-statuses", middleware.WriteAuth(authzClient))
+        writes.POST("", createAppCardStatus)
+        writes.PUT("/:id", updateAppCardStatus)
+        writes.DELETE("/:id", deleteAppCardStatus)
+}</span>
+
+// appCardStatusRequest is the payload accepted by POST /app-card-statuses and
+// PUT /app-card-statuses/:id.
+type appCardStatusRequest struct {
+        ScopeValue string `json:"scope_value" binding:"required"`
+        Enabled    bool   `json:"enabled"`
+        Label      string `json:"label" binding:"required"`
+}
+
+// Create or update an app-card-status record for a service scope.
+//
+//        @Summary                Create or update an app-card-status record
+//        @Description        Creates an app-card-status record for the given service scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires a forwarded user bearer token carrying the admin role.
+//        @Tags                        app-card-statuses
+//        @Accept                        json
+//        @Produce                json
+//        @Param                        Authorization                        header                                        string        true        "Bearer user access token"
+//        @Param                        app_card_status                        body                appCardStatusRequest        true        "App card status record"
+//        @Success                200                                                {object}        models.AppCardStatus
+//        @Success                201                                                {object}        models.AppCardStatus
+//        @Failure                400                                                {object}        apiv.ErrorVO
+//        @Failure                401                                                {object}        apiv.ErrorVO
+//        @Failure                500                                                {object}        apiv.ErrorVO
+//        @Router                        /app-card-statuses [post]
+func createAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
+        var req appCardStatusRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">now := time.Now().UTC()
+        record := &amp;models.AppCardStatus{
+                ScopeType:  models.AppCardStatusScopeService,
+                ScopeValue: req.ScopeValue,
+                Enabled:    req.Enabled,
+                Label:      req.Label,
+                CreatedAt:  now,
+                UpdatedAt:  now,
+        }
+
+        if err := record.Validate(); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "validation_failed", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "upsert_app_card_status", "", record.Label)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to save app card status"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("app-card-statuses").Start(c.Request.Context(), "upsert-app-card-status",
+                oteltrace.WithAttributes(attribute.String("scope_value", record.ScopeValue)))
+        defer span.End()
+
+        existing, err := findAppCardStatusByScope(record.ScopeValue)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to look up existing app card status", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "lookup_failed", Message: "failed to save app card status"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if existing != nil </span><span class="cov0" title="0">{
+                record.ID = existing.ID
+                record.CreatedAt = existing.CreatedAt
+                if _, _, err := database.Update(constants.AppCardStatusCollection, record.ID, record); err != nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("Failed to update app card status", "error", err.Error())
+                        completeAudit(auditID, models.AuditFailed, err.Error())
+                        c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "update_failed", Message: "failed to save app card status"})
+                        return
+                }</span>
+                <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+                c.JSON(http.StatusOK, record)
+                return</span>
+        }
+
+        <span class="cov0" title="0">id, err := database.Insert(constants.AppCardStatusCollection, record)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to insert app card status", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "insert_failed", Message: "failed to save app card status"})
+                return
+        }</span>
+        <span class="cov0" title="0">record.ID = id
+        completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.JSON(http.StatusCreated, record)</span>
+}
+
+// findAppCardStatusByScope returns the existing record for a service scope, or nil if none exists.
+func findAppCardStatusByScope(scopeValue string) (*models.AppCardStatus, error) <span class="cov0" title="0">{
+        filter := bson.D{
+                {Key: "scope_type", Value: models.AppCardStatusScopeService},
+                {Key: "scope_value", Value: scopeValue},
+        }
+        records, err := database.Query[models.AppCardStatus](constants.AppCardStatusCollection, filter, nil, nil, 0, 1)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if len(records) == 0 </span><span class="cov0" title="0">{
+                return nil, nil
+        }</span>
+        <span class="cov0" title="0">return records[0], nil</span>
+}
+
+// List every app-card-status record, for the admin management view.
+//
+//        @Summary                List app-card-status records
+//        @Description        Returns every app-card-status record regardless of enabled state, for admin-web's management view.
+//        @Tags                        app-card-statuses
+//        @Produce                json
+//        @Success                200        {array}                models.AppCardStatus
+//        @Failure                500        {object}        apiv.ErrorVO
+//        @Router                        /app-card-statuses [get]
+func listAppCardStatuses(c *gin.Context) <span class="cov0" title="0">{
+        _, span := otel.Tracer("app-card-statuses").Start(c.Request.Context(), "list-app-card-statuses")
+        records, err := database.Query[models.AppCardStatus](constants.AppCardStatusCollection, bson.D{}, nil, nil, 0, 1000)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to query app card statuses", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "query_failed", Message: "failed to list app card statuses"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if records == nil </span><span class="cov0" title="0">{
+                records = []*models.AppCardStatus{}
+        }</span>
+        <span class="cov0" title="0">c.JSON(http.StatusOK, records)</span>
+}
+
+// List active (enabled) app-card-status records matching the requested service scopes.
+//
+//        @Summary                List active app-card-status records for a set of service scopes
+//        @Description        Returns enabled app-card-status records matching any of the requested service scopes. scope values look like "service:catalog".
+//        @Tags                        app-card-statuses
+//        @Produce                json
+//        @Param                        scope        query                []string        true        "Repeated scope filter, e.g. scope=service:catalog&amp;scope=service:shelf"
+//        @Success                200                {array}                models.AppCardStatus
+//        @Failure                400                {object}        apiv.ErrorVO
+//        @Failure                500                {object}        apiv.ErrorVO
+//        @Router                        /app-card-statuses/active [get]
+func listActiveAppCardStatuses(c *gin.Context) <span class="cov0" title="0">{
+        scopes := c.QueryArray("scope")
+        if len(scopes) == 0 </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "missing_scope", Message: "at least one scope query param is required"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">serviceValues := extractAppCardServiceScopeValues(scopes)
+        if len(serviceValues) == 0 </span><span class="cov0" title="0">{
+                c.JSON(http.StatusOK, []*models.AppCardStatus{})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("app-card-statuses").Start(c.Request.Context(), "list-active-app-card-statuses",
+                oteltrace.WithAttributes(attribute.StringSlice("scope", scopes)))
+
+        filter := bson.D{
+                {Key: "enabled", Value: true},
+                {Key: "scope_type", Value: models.AppCardStatusScopeService},
+                {Key: "scope_value", Value: bson.D{{Key: "$in", Value: serviceValues}}},
+        }
+
+        records, err := database.Query[models.AppCardStatus](constants.AppCardStatusCollection, filter, nil, nil, 0, 1000)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to query active app card statuses", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "query_failed", Message: "failed to list active app card statuses"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if records == nil </span><span class="cov0" title="0">{
+                records = []*models.AppCardStatus{}
+        }</span>
+        <span class="cov0" title="0">c.JSON(http.StatusOK, records)</span>
+}
+
+// Update an app-card-status record by id.
+//
+//        @Summary                Update an app-card-status record
+//        @Description        Replaces the mutable fields of an existing app-card-status record. Requires a forwarded user bearer token carrying the admin role.
+//        @Tags                        app-card-statuses
+//        @Accept                        json
+//        @Produce                json
+//        @Param                        Authorization                        header                                        string        true        "Bearer user access token"
+//        @Param                        id                                                path                string                                        true        "App card status record ID"
+//        @Param                        app_card_status                        body                appCardStatusRequest        true        "Updated app card status record"
+//        @Success                200                                                {object}        models.AppCardStatus
+//        @Failure                400                                                {object}        apiv.ErrorVO
+//        @Failure                401                                                {object}        apiv.ErrorVO
+//        @Failure                404                                                {object}        apiv.ErrorVO
+//        @Failure                500                                                {object}        apiv.ErrorVO
+//        @Router                        /app-card-statuses/{id} [put]
+func updateAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
+        id, err := primitive.ObjectIDFromHex(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_id", Message: "id must be a valid object id"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">var req appCardStatusRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">existing, err := database.Get[models.AppCardStatus](constants.AppCardStatusCollection, id)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to look up app card status", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "lookup_failed", Message: "failed to look up app card status"})
+                return
+        }</span>
+        <span class="cov0" title="0">if existing == nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "app card status not found"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">updated := &amp;models.AppCardStatus{
+                ID:         id,
+                ScopeType:  models.AppCardStatusScopeService,
+                ScopeValue: req.ScopeValue,
+                Enabled:    req.Enabled,
+                Label:      req.Label,
+                CreatedAt:  existing.CreatedAt,
+                UpdatedAt:  time.Now().UTC(),
+        }
+
+        if err := updated.Validate(); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "validation_failed", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "update_app_card_status", id.Hex(), updated.Label)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to update app card status"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("app-card-statuses").Start(c.Request.Context(), "update-app-card-status",
+                oteltrace.WithAttributes(attribute.String("id", id.Hex())))
+        matched, _, err := database.Update(constants.AppCardStatusCollection, id, updated)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to update app card status", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "update_failed", Message: "failed to update app card status"})
+                return
+        }</span>
+        <span class="cov0" title="0">if matched == 0 </span><span class="cov0" title="0">{
+                completeAudit(auditID, models.AuditFailed, "app card status not found")
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "app card status not found"})
+                return
+        }</span>
+        <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.JSON(http.StatusOK, updated)</span>
+}
+
+// Delete an app-card-status record.
+//
+//        @Summary                Delete an app-card-status record
+//        @Description        Deletes an app-card-status record; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.
+//        @Tags                        app-card-statuses
+//        @Param                        Authorization        header        string        true        "Bearer user access token"
+//        @Param                        id                                path        string        true        "App card status record ID"
+//        @Success                204                                {object}        interface{}
+//        @Failure                400                                {object}        apiv.ErrorVO
+//        @Failure                401                                {object}        apiv.ErrorVO
+//        @Failure                404                                {object}        apiv.ErrorVO
+//        @Failure                500                                {object}        apiv.ErrorVO
+//        @Router                        /app-card-statuses/{id} [delete]
+func deleteAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
+        id, err := primitive.ObjectIDFromHex(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_id", Message: "id must be a valid object id"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "delete_app_card_status", id.Hex(), "")
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to delete app card status"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("app-card-statuses").Start(c.Request.Context(), "delete-app-card-status",
+                oteltrace.WithAttributes(attribute.String("id", id.Hex())))
+        deleted, err := database.Delete[models.AppCardStatus](constants.AppCardStatusCollection, id)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to delete app card status", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "delete_failed", Message: "failed to delete app card status"})
+                return
+        }</span>
+        <span class="cov0" title="0">if !deleted </span><span class="cov0" title="0">{
+                completeAudit(auditID, models.AuditFailed, "app card status not found")
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "app card status not found"})
+                return
+        }</span>
+        <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.Status(http.StatusNoContent)</span>
+}
+
+// extractAppCardServiceScopeValues returns the service names from a list of "service:&lt;name&gt;"
+// scope query params, ignoring any other scope type.
+func extractAppCardServiceScopeValues(scopes []string) []string <span class="cov7" title="4">{
+        var serviceValues []string
+        for _, raw := range scopes </span><span class="cov7" title="5">{
+                scopeType, scopeValue := parseAppCardScope(raw)
+                if scopeType == "service" &amp;&amp; scopeValue != "" </span><span class="cov5" title="3">{
+                        serviceValues = append(serviceValues, scopeValue)
+                }</span>
+        }
+        <span class="cov7" title="4">return serviceValues</span>
+}
+
+// parseAppCardScope splits a "type" or "type:value" scope query param into its parts.
+func parseAppCardScope(raw string) (string, string) <span class="cov10" title="8">{
+        parts := strings.SplitN(raw, ":", 2)
+        if len(parts) == 2 </span><span class="cov8" title="6">{
+                return parts[0], parts[1]
+        }</span>
+        <span class="cov4" title="2">return parts[0], ""</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package server
 
 import (
         "net/http"
@@ -2111,7 +2877,7 @@ func parseScope(raw string) (models.ScopeType, string) <span class="cov10" title
 }
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package server
+		<pre class="file" id="file10" style="display: none">package server
 
 import (
         "github.com/gin-gonic/gin"
@@ -2121,11 +2887,12 @@ import (
 func SetupHandlers(g *gin.Engine, authzClient *authz.Client) <span class="cov8" title="1">{
         setupBannerHandlers(g, authzClient)
         setupMaintenanceModeHandlers(g, authzClient)
+        setupAppCardStatusHandlers(g, authzClient)
         setupStatusHandlers(g)
 }</span>
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package server
+		<pre class="file" id="file11" style="display: none">package server
 
 import (
         "net/http"
@@ -2530,7 +3297,7 @@ func parseMaintenanceScope(raw string) (models.MaintenanceScopeType, string) <sp
 }
 </pre>
 		
-		<pre class="file" id="file10" style="display: none">// Package middleware provides Gin middleware for admin-api's route groups.
+		<pre class="file" id="file12" style="display: none">// Package middleware provides Gin middleware for admin-api's route groups.
 package middleware
 
 import (
@@ -2611,7 +3378,7 @@ func forbidden(c *gin.Context) <span class="cov1" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file11" style="display: none">package server
+		<pre class="file" id="file13" style="display: none">package server
 
 import (
         "net/http"
