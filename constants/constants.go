@@ -29,6 +29,10 @@ const (
 	// records.
 	MaintenanceModeCollection = "maintenance_modes"
 
+	// AppCardStatusCollection is the MongoDB collection name for app-card-status
+	// records.
+	AppCardStatusCollection = "app_card_statuses"
+
 	// AdminActionAuditLogCollection is the MongoDB collection name for write-route
 	// audit records.
 	AdminActionAuditLogCollection = "admin_action_audit_logs"
