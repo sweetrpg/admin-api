@@ -1,4 +1,11 @@
 
+## 0.10.0 - 2026-09-04
+
+### Added
+- Add app-card-status per-service record type and endpoints
+
+
+
 ## 0.9.0 - 2026-09-03
 
 ### Added
