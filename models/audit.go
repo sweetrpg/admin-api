@@ -34,31 +34,31 @@ const (
 // whatever doc it's given, so CompleteAudit - which only ever populates
 // Status/CompletedAt/ErrorMessage on top of an existing record's ID - must
 // not marshal its unset fields as empty values, or it would overwrite the
-// original ActingUserSub/Action/AttemptedAt with blanks.
+// original ActingUserId/Action/AttemptedAt with blanks.
 type AdminActionAuditLog struct {
-	ID            primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	ActingUserSub string             `bson:"acting_user_sub,omitempty" json:"acting_user_sub"`
-	Action        string             `bson:"action,omitempty" json:"action"`
-	ResourceID    string             `bson:"resource_id,omitempty" json:"resource_id,omitempty"`
-	Detail        string             `bson:"detail,omitempty" json:"detail,omitempty"`
-	Status        AuditStatus        `bson:"status" json:"status"`
-	AttemptedAt   time.Time          `bson:"attempted_at,omitempty" json:"attempted_at"`
-	CompletedAt   *time.Time         `bson:"completed_at,omitempty" json:"completed_at,omitempty"`
-	ErrorMessage  string             `bson:"error_message,omitempty" json:"error_message,omitempty"`
+	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	ActingUserId string             `bson:"acting_user_id,omitempty" json:"acting_user_id"`
+	Action       string             `bson:"action,omitempty" json:"action"`
+	ResourceID   string             `bson:"resource_id,omitempty" json:"resource_id,omitempty"`
+	Detail       string             `bson:"detail,omitempty" json:"detail,omitempty"`
+	Status       AuditStatus        `bson:"status" json:"status"`
+	AttemptedAt  time.Time          `bson:"attempted_at,omitempty" json:"attempted_at"`
+	CompletedAt  *time.Time         `bson:"completed_at,omitempty" json:"completed_at,omitempty"`
+	ErrorMessage string             `bson:"error_message,omitempty" json:"error_message,omitempty"`
 }
 
 // RecordAuditAttempt writes the "attempted" audit record for a write-route
 // mutation before the mutation itself runs. Returns the record's ID for a
 // later CompleteAudit call. Callers must not perform the mutation if this
 // returns an error.
-func RecordAuditAttempt(actingUserSub, action, resourceID, detail string) (primitive.ObjectID, error) {
+func RecordAuditAttempt(actingUserId, action, resourceID, detail string) (primitive.ObjectID, error) {
 	entry := &AdminActionAuditLog{
-		ActingUserSub: actingUserSub,
-		Action:        action,
-		ResourceID:    resourceID,
-		Detail:        detail,
-		Status:        AuditAttempted,
-		AttemptedAt:   time.Now().UTC(),
+		ActingUserId: actingUserId,
+		Action:       action,
+		ResourceID:   resourceID,
+		Detail:       detail,
+		Status:       AuditAttempted,
+		AttemptedAt:  time.Now().UTC(),
 	}
 	return database.Insert(constants.AdminActionAuditLogCollection, entry)
 }

@@ -2,78 +2,14 @@
 package middleware
 
 import (
-	"net/http"
-	"strings"
-
 	"github.com/gin-gonic/gin"
-	"github.com/sweetrpg/admin-api/authz"
-	"github.com/sweetrpg/admin-api/constants"
-	apiv "github.com/sweetrpg/api-core.go/vo"
-	"github.com/sweetrpg/common.go/logging"
-)
-
-const (
-	bearerPrefix = "Bearer "
-
-	// ActingUserSubKey is the gin.Context key write handlers read to get the
-	// attributed acting user after WriteAuth has validated the request.
-	ActingUserSubKey = "actingUserSub"
+	"github.com/sweetrpg/authz-client.go/authz"
 )
 
 // WriteAuth requires a forwarded user bearer token carrying the admin role, verified
-// against auth-api's /authz/check. On success, the acting user (from auth-api's verified
-// token subject) is stashed on the context under ActingUserSubKey for handlers to
-// attribute their audit records to.
+// against auth-api's /authz/check. On success, the resolved canonical user ID is
+// stashed in the context (read via authz.Viewer(c)) for handlers to attribute their
+// audit records to. Fails closed if the acting user cannot be resolved to a canonical ID.
 func WriteAuth(client *authz.Client) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token := bearerToken(c)
-		if token == "" {
-			unauthorized(c)
-			return
-		}
-
-		result, err := client.Check(c.Request.Context(), token, constants.ServiceName)
-		if err != nil {
-			if _, ok := err.(authz.InvalidTokenError); ok {
-				unauthorized(c)
-				return
-			}
-			logging.Logger.Error("authz check failed", "error", err.Error())
-			c.AbortWithStatusJSON(http.StatusServiceUnavailable, apiv.ErrorVO{
-				Error:   "authz_unavailable",
-				Message: "Unable to verify authorization",
-			})
-			return
-		}
-
-		if !result.Allowed || !authz.HasRole(result.Roles, authz.RoleAdmin) {
-			forbidden(c)
-			return
-		}
-
-		c.Set(ActingUserSubKey, result.Sub)
-		c.Next()
-	}
-}
-
-func bearerToken(c *gin.Context) string {
-	auth := c.GetHeader("Authorization")
-	if !strings.HasPrefix(auth, bearerPrefix) {
-		return ""
-	}
-	return strings.TrimPrefix(auth, bearerPrefix)
-}
-
-func unauthorized(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusUnauthorized, apiv.ErrorVO{
-		Error:   "unauthorized",
-		Message: "missing or invalid credentials",
-	})
-}
-
-func forbidden(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusForbidden, apiv.ErrorVO{
-		Error:   "forbidden",
-		Message: "caller does not have a qualifying role",
-	})
+	return authz.RequireAnyRole(client, "admin-api", authz.RoleAdmin)
 }

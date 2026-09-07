@@ -38,8 +38,11 @@ type AppCardStatus struct {
 	ScopeValue string                 `bson:"scope_value" json:"scope_value"`
 	Enabled    bool                   `bson:"enabled" json:"enabled"`
 	Label      string                 `bson:"label" json:"label"`
-	CreatedAt  time.Time              `bson:"created_at" json:"created_at"`
-	UpdatedAt  time.Time              `bson:"updated_at" json:"updated_at"`
+	// Platform audit fields (PADR-0001); hard-delete record (PADR-0027), no deleted_* pair.
+	CreatedBy string    `bson:"created_by" json:"created_by"`
+	CreatedAt time.Time `bson:"created_at" json:"created_at"`
+	UpdatedBy string    `bson:"updated_by" json:"updated_by"`
+	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
 }
 
 // Validate checks that the record satisfies the invariants required by the spec:
