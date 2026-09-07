@@ -22,3 +22,4 @@ data:
   # PYROSCOPE_TENANT_ID: psw
   SENTRY_RELEASE: "1"
   AUTH_API_URL: http://api-v1.sweetrpg-auth.svc.cluster.local:8000
+  USERS_API_URL: http://api-v1.sweetrpg-users.svc.cluster.local:8000

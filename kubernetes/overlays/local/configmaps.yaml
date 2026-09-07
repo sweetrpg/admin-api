@@ -15,3 +15,5 @@ data:
   DB_USER: admin-api
   DB_NAME: sweetrpg-admin
   DB_OPTS: retryWrites=true&w=majority
+  AUTH_API_URL: http://api-v1.sweetrpg-auth.svc.cluster.local:8000
+  USERS_API_URL: http://api-v1.sweetrpg-users.svc.cluster.local:8000

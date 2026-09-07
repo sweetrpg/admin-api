@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/sweetrpg/admin-api/authz"
+	"github.com/sweetrpg/authz-client.go/authz"
 )
 
 func SetupHandlers(g *gin.Engine, authzClient *authz.Client) {

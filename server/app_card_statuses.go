@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sweetrpg/admin-api/authz"
 	"github.com/sweetrpg/admin-api/constants"
 	"github.com/sweetrpg/admin-api/models"
 	"github.com/sweetrpg/admin-api/server/middleware"
 	apiv "github.com/sweetrpg/api-core.go/vo"
+	"github.com/sweetrpg/authz-client.go/authz"
 	"github.com/sweetrpg/common.go/logging"
 	"github.com/sweetrpg/mongodb.go/database"
 	"go.mongodb.org/mongo-driver/bson"
@@ -63,6 +63,7 @@ func createAppCardStatus(c *gin.Context) {
 	}
 
 	now := time.Now().UTC()
+	viewer := authz.Viewer(c)
 	record := &models.AppCardStatus{
 		ScopeType:  models.AppCardStatusScopeService,
 		ScopeValue: req.ScopeValue,
@@ -70,6 +71,8 @@ func createAppCardStatus(c *gin.Context) {
 		Label:      req.Label,
 		CreatedAt:  now,
 		UpdatedAt:  now,
+		CreatedBy:  viewer,
+		UpdatedBy:  viewer,
 	}
 
 	if err := record.Validate(); err != nil {
@@ -77,7 +80,7 @@ func createAppCardStatus(c *gin.Context) {
 		return
 	}
 
-	auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "upsert_app_card_status", "", record.Label)
+	auditID, err := models.RecordAuditAttempt(viewer, "upsert_app_card_status", "", record.Label)
 	if err != nil {
 		logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
 		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to save app card status"})
@@ -99,6 +102,7 @@ func createAppCardStatus(c *gin.Context) {
 	if existing != nil {
 		record.ID = existing.ID
 		record.CreatedAt = existing.CreatedAt
+		record.CreatedBy = existing.CreatedBy
 		if _, _, err := database.Update(constants.AppCardStatusCollection, record.ID, record); err != nil {
 			logging.Logger.Error("Failed to update app card status", "error", err.Error())
 			completeAudit(auditID, models.AuditFailed, err.Error())
@@ -251,6 +255,7 @@ func updateAppCardStatus(c *gin.Context) {
 		return
 	}
 
+	viewer := authz.Viewer(c)
 	updated := &models.AppCardStatus{
 		ID:         id,
 		ScopeType:  models.AppCardStatusScopeService,
@@ -259,6 +264,8 @@ func updateAppCardStatus(c *gin.Context) {
 		Label:      req.Label,
 		CreatedAt:  existing.CreatedAt,
 		UpdatedAt:  time.Now().UTC(),
+		CreatedBy:  existing.CreatedBy,
+		UpdatedBy:  viewer,
 	}
 
 	if err := updated.Validate(); err != nil {
@@ -266,7 +273,7 @@ func updateAppCardStatus(c *gin.Context) {
 		return
 	}
 
-	auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "update_app_card_status", id.Hex(), updated.Label)
+	auditID, err := models.RecordAuditAttempt(viewer, "update_app_card_status", id.Hex(), updated.Label)
 	if err != nil {
 		logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
 		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to update app card status"})
@@ -313,7 +320,8 @@ func deleteAppCardStatus(c *gin.Context) {
 		return
 	}
 
-	auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "delete_app_card_status", id.Hex(), "")
+	viewer := authz.Viewer(c)
+	auditID, err := models.RecordAuditAttempt(viewer, "delete_app_card_status", id.Hex(), "")
 	if err != nil {
 		logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
 		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to delete app card status"})
