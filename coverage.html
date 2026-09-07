@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>authz: Go Coverage Report</title>
+		<title>admin-api: Go Coverage Report</title>
 		<style>
 			body {
 				background: black;
@@ -55,11 +55,11 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/sweetrpg/admin-api/authz/client.go (67.9%)</option>
+				<option value="file0">github.com/sweetrpg/admin-api/cmd/admin-api/main.go (0.0%)</option>
 				
-				<option value="file1">github.com/sweetrpg/admin-api/cmd/admin-api/main.go (0.0%)</option>
+				<option value="file1">github.com/sweetrpg/admin-api/cmd/backfill-audit-fields/main.go (0.0%)</option>
 				
-				<option value="file2">github.com/sweetrpg/admin-api/cmd/backfill-audit-fields/main.go (0.0%)</option>
+				<option value="file2">github.com/sweetrpg/admin-api/cmd/backfill-canonical-user-ids/main.go (0.0%)</option>
 				
 				<option value="file3">github.com/sweetrpg/admin-api/docs/docs.go (0.0%)</option>
 				
@@ -71,15 +71,15 @@
 				
 				<option value="file7">github.com/sweetrpg/admin-api/models/maintenance_mode.go (85.7%)</option>
 				
-				<option value="file8">github.com/sweetrpg/admin-api/server/app_card_statuses.go (10.8%)</option>
+				<option value="file8">github.com/sweetrpg/admin-api/server/app_card_statuses.go (10.6%)</option>
 				
-				<option value="file9">github.com/sweetrpg/admin-api/server/banners.go (11.9%)</option>
+				<option value="file9">github.com/sweetrpg/admin-api/server/banners.go (11.8%)</option>
 				
 				<option value="file10">github.com/sweetrpg/admin-api/server/handlers.go (100.0%)</option>
 				
-				<option value="file11">github.com/sweetrpg/admin-api/server/maintenance_modes.go (15.3%)</option>
+				<option value="file11">github.com/sweetrpg/admin-api/server/maintenance_modes.go (15.2%)</option>
 				
-				<option value="file12">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (87.5%)</option>
+				<option value="file12">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (100.0%)</option>
 				
 				<option value="file13">github.com/sweetrpg/admin-api/server/status.go (45.5%)</option>
 				
@@ -104,115 +104,7 @@
 		</div>
 		<div id="content">
 		
-		<pre class="file" id="file0" style="display: none">// Package authz calls auth-api's POST /authz/check to verify a caller's bearer token and
-// resolve their roles, and provides Gin middleware that gates a route on holding one of a set
-// of allowed roles. See platform's api-client-auth spec
-// (openspec/changes/api-client-auth in sweetrpg/platform).
-package authz
-
-import (
-        "bytes"
-        "context"
-        "encoding/json"
-        "fmt"
-        "net/http"
-        "time"
-
-        "github.com/sweetrpg/common.go/logging"
-)
-
-// Platform role names, matching auth-api's fixed role model exactly (see
-// openspec/specs/user-authorization/spec.md's "Role model" requirement).
-const (
-        RoleUser      = "user"
-        RoleSubmitter = "submitter"
-        RoleEditor    = "editor"
-        RoleModerator = "moderator"
-        RoleApprover  = "approver"
-        RoleAdmin     = "admin"
-)
-
-// CheckResponse is the union of auth-api's allowed/denied /authz/check response shapes.
-type CheckResponse struct {
-        Allowed bool     `json:"allowed"`
-        Roles   []string `json:"roles"`
-        Sub     string   `json:"sub"`
-        Reason  string   `json:"reason"`
-}
-
-// HasRole reports whether roles contains want.
-func HasRole(roles []string, want string) bool <span class="cov0" title="0">{
-        for _, r := range roles </span><span class="cov0" title="0">{
-                if r == want </span><span class="cov0" title="0">{
-                        return true
-                }</span>
-        }
-        <span class="cov0" title="0">return false</span>
-}
-
-// InvalidTokenError means auth-api rejected the bearer token itself (missing, expired,
-// unverifiable) - distinct from a service-level deny (Allowed: false with a Reason) or a
-// transport/backend failure.
-type InvalidTokenError struct{}
-
-func (InvalidTokenError) Error() string <span class="cov0" title="0">{ return "authz: invalid or missing token" }</span>
-
-// Client calls auth-api's /authz/check endpoint.
-type Client struct {
-        baseURL string
-        http    *http.Client
-}
-
-// NewClient builds a Client against auth-api's base URL (e.g.
-// http://api-v1.sweetrpg-auth.svc.cluster.local:8000). An empty baseURL is accepted so the
-// service can still start when AUTH_API_URL isn't configured; every Check call will then fail
-// with a transport error, which RequireAnyRole surfaces as a 503.
-func NewClient(baseURL string) *Client <span class="cov10" title="4">{
-        return &amp;Client{
-                baseURL: baseURL,
-                http:    &amp;http.Client{Timeout: 5 * time.Second},
-        }
-}</span>
-
-// Check verifies token against auth-api and returns the caller's allowed/roles/subject for the
-// given service name. Returns InvalidTokenError if auth-api rejects the token itself.
-func (c *Client) Check(ctx context.Context, token, service string) (*CheckResponse, error) <span class="cov10" title="4">{
-        body, err := json.Marshal(map[string]string{"service": service})
-        if err != nil </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("authz: marshal request: %w", err)
-        }</span>
-
-        <span class="cov10" title="4">req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/authz/check", bytes.NewReader(body))
-        if err != nil </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("authz: build request: %w", err)
-        }</span>
-        <span class="cov10" title="4">req.Header.Set("Content-Type", "application/json")
-        req.Header.Set("Authorization", "Bearer "+token)
-
-        resp, err := c.http.Do(req)
-        if err != nil </span><span class="cov1" title="1">{
-                return nil, fmt.Errorf("authz: request failed: %w", err)
-        }</span>
-        <span class="cov8" title="3">defer func() </span><span class="cov8" title="3">{ _ = resp.Body.Close() }</span>()
-
-        <span class="cov8" title="3">if resp.StatusCode == http.StatusUnauthorized </span><span class="cov1" title="1">{
-                return nil, InvalidTokenError{}
-        }</span>
-        <span class="cov5" title="2">if resp.StatusCode != http.StatusOK </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("authz: unexpected status %d from auth-api", resp.StatusCode)
-        }</span>
-
-        <span class="cov5" title="2">var out CheckResponse
-        if err := json.NewDecoder(resp.Body).Decode(&amp;out); err != nil </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("authz: decode response: %w", err)
-        }</span>
-
-        <span class="cov5" title="2">logging.Logger.Debug("authz check", "service", service, "allowed", out.Allowed, "sub", out.Sub)
-        return &amp;out, nil</span>
-}
-</pre>
-		
-		<pre class="file" id="file1" style="display: none">package main
+		<pre class="file" id="file0" style="display: none">package main
 
 import (
         "context"
@@ -231,11 +123,10 @@ import (
         "github.com/grafana/pyroscope-go"
         "github.com/joho/godotenv"
         "github.com/penglongli/gin-metrics/ginmetrics"
-        sloggin "github.com/samber/slog-gin"
+        "github.com/samber/slog-gin"
         actuator "github.com/sinhashubham95/go-actuator"
         swaggerfiles "github.com/swaggo/files"
         ginSwagger "github.com/swaggo/gin-swagger"
-        "github.com/sweetrpg/admin-api/authz"
         "github.com/sweetrpg/admin-api/constants"
         "github.com/sweetrpg/admin-api/docs"
         "github.com/sweetrpg/admin-api/models"
@@ -244,6 +135,7 @@ import (
         "github.com/sweetrpg/api-core.go/featureflags"
         "github.com/sweetrpg/api-core.go/tracing"
         "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/authz-client.go/authz"
         "github.com/sweetrpg/common.go/logging"
         "github.com/sweetrpg/common.go/util"
         "github.com/sweetrpg/mongodb.go/database"
@@ -315,7 +207,7 @@ func main() <span class="cov0" title="0">{
         // Add rate limiter
         r.Use(RateLimiter())
 
-        authzClient := authz.NewClient(util.GetEnv(constants.AUTH_API_URL, ""))
+        authzClient := authz.NewClient(util.GetEnv(constants.AUTH_API_URL, ""), util.GetEnv(constants.USERS_API_URL, ""))
         server.SetupHandlers(r, authzClient)
 
         _ = r.Run(util.GetEnv(apiconstants.BIND_ADDRESS, ":8000"))</span>
@@ -482,7 +374,7 @@ func RateLimiter() gin.HandlerFunc <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">// Command backfill-audit-fields stamps the platform audit fields (PADR-0001) on admin-api's
+		<pre class="file" id="file1" style="display: none">// Command backfill-audit-fields stamps the platform audit fields (PADR-0001) on admin-api's
 // pre-convention documents: updated_by on banners, and created_by / updated_by on
 // maintenance_modes. created_at / updated_at are already present on both. No acting user was
 // recorded historically, so a missing *_by is set to the "system" sentinel; on a banner an
@@ -581,6 +473,186 @@ func stamp(ctx context.Context, coll string, filter bson.D, apply bool, set func
                 <span class="cov0" title="0">n++</span>
         }
         <span class="cov0" title="0">return n</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">// Command backfill-canonical-user-ids rewrites legacy Auth0-subject values in the
+// banners and maintenance_modes audit fields (created_by, updated_by) to the canonical
+// users._id each subject maps to, using users-api's internal resolve-subjects batch endpoint.
+// Subjects that cannot be resolved to a user become the "system" actor. Idempotent: values that
+// are already 24-hex canonical ids or "system" are skipped. Dry-run by default; pass -apply to
+// write. Run once after the admin-api release that adopts authz.Viewer.
+package main
+
+import (
+        "bytes"
+        "context"
+        "encoding/json"
+        "flag"
+        "fmt"
+        "net/http"
+        "os"
+        "regexp"
+        "time"
+
+        "github.com/joho/godotenv"
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/common.go/logging"
+        "github.com/sweetrpg/common.go/util"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+)
+
+type target struct {
+        collection string
+        field      string
+}
+
+var targets = []target{
+        {"banners", "created_by"},
+        {"banners", "updated_by"},
+        {"maintenance_modes", "created_by"},
+        {"maintenance_modes", "updated_by"},
+}
+
+var canonicalIDRE = regexp.MustCompile(`^[0-9a-f]{24}$`)
+
+type resolveSubjectsRequest struct {
+        Subjects []string `json:"subjects"`
+}
+
+func main() <span class="cov0" title="0">{
+        _ = godotenv.Load(".env")
+        logging.Init()
+
+        apply := flag.Bool("apply", false, "write changes; default is a dry run")
+        adminToken := flag.String("users-admin-token", os.Getenv("USERS_ADMIN_TOKEN"), "admin bearer token for users-api's internal resolve-subjects endpoint")
+        flag.Parse()
+
+        database.SetupDatabase()
+        defer database.TeardownDatabase()
+
+        ctx := context.Background()
+
+        usersBaseURL := util.GetEnv(constants.USERS_API_URL, "")
+
+        distinct := map[string]struct{}{}
+        for _, t := range targets </span><span class="cov0" title="0">{
+                coll := database.Db.Collection(t.collection)
+                values, err := coll.Distinct(ctx, t.field, bson.M{})
+                if err != nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("backfill: distinct failed", "collection", t.collection, "field", t.field, "error", err.Error())
+                        return
+                }</span>
+                <span class="cov0" title="0">for _, v := range values </span><span class="cov0" title="0">{
+                        s, ok := v.(string)
+                        if !ok || s == "" || s == "system" || canonicalIDRE.MatchString(s) </span><span class="cov0" title="0">{
+                                continue</span>
+                        }
+                        <span class="cov0" title="0">distinct[s] = struct{}{}</span>
+                }
+        }
+        <span class="cov0" title="0">if len(distinct) == 0 </span><span class="cov0" title="0">{
+                logging.Logger.Info("backfill: no subject-shaped values found to resolve")
+                return
+        }</span>
+        <span class="cov0" title="0">logging.Logger.Info("backfill: distinct subjects found", "count", len(distinct))
+
+        subjects := make([]string, 0, len(distinct))
+        for s := range distinct </span><span class="cov0" title="0">{
+                subjects = append(subjects, s)
+        }</span>
+
+        <span class="cov0" title="0">resolved := map[string]string{}
+        if *adminToken == "" </span><span class="cov0" title="0">{
+                logging.Logger.Warn("backfill: no users-admin-token set, skipping subject resolution", "dry_run", !*apply)
+        }</span> else<span class="cov0" title="0"> {
+                var err error
+                resolved, err = resolveSubjects(ctx, usersBaseURL, *adminToken, subjects)
+                if err != nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("backfill: resolve subjects failed", "error", err.Error())
+                        return
+                }</span>
+        }
+
+        <span class="cov0" title="0">rewritten := map[string]string{}
+        for _, s := range subjects </span><span class="cov0" title="0">{
+                if id := resolved[s]; id != "" </span><span class="cov0" title="0">{
+                        rewritten[s] = id
+                }</span> else<span class="cov0" title="0"> {
+                        logging.Logger.Warn("backfill: unmappable subject -&gt; system", "subject", s)
+                        rewritten[s] = "system"
+                }</span>
+        }
+
+        <span class="cov0" title="0">var updated int64
+        for _, t := range targets </span><span class="cov0" title="0">{
+                coll := database.Db.Collection(t.collection)
+                for oldValue, newValue := range rewritten </span><span class="cov0" title="0">{
+                        modifier := "would update"
+                        affected := int64(0)
+                        if *apply </span><span class="cov0" title="0">{
+                                res, err := coll.UpdateMany(ctx, bson.M{t.field: oldValue}, bson.D{{Key: "$set", Value: bson.D{{Key: t.field, Value: newValue}}}})
+                                if err != nil </span><span class="cov0" title="0">{
+                                        logging.Logger.Error("backfill: update failed", "collection", t.collection, "field", t.field, "value", oldValue, "error", err.Error())
+                                        return
+                                }</span>
+                                <span class="cov0" title="0">modifier = "updated"
+                                affected = res.ModifiedCount
+                                updated += affected</span>
+                        } else<span class="cov0" title="0"> {
+                                count, err := coll.CountDocuments(ctx, bson.M{t.field: oldValue})
+                                if err != nil </span><span class="cov0" title="0">{
+                                        logging.Logger.Error("backfill: count failed", "collection", t.collection, "field", t.field, "value", oldValue, "error", err.Error())
+                                        return
+                                }</span>
+                                <span class="cov0" title="0">affected = count</span>
+                        }
+                        <span class="cov0" title="0">if affected &gt; 0 </span><span class="cov0" title="0">{
+                                logging.Logger.Info("backfill: "+modifier, "collection", t.collection, "field", t.field, "value", oldValue, "replacement", newValue, "documents", affected)
+                        }</span>
+                }
+        }
+
+        <span class="cov0" title="0">if *apply </span><span class="cov0" title="0">{
+                logging.Logger.Info("backfill: complete", "documents_updated", updated)
+        }</span> else<span class="cov0" title="0"> {
+                fmt.Println("dry run complete - pass -apply to write changes; still remaining check via task 5.3")
+        }</span>
+}
+
+func resolveSubjects(ctx context.Context, usersBaseURL, token string, subjects []string) (map[string]string, error) <span class="cov0" title="0">{
+        if usersBaseURL == "" </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("USERS_API_URL is not set")
+        }</span>
+
+        <span class="cov0" title="0">body, err := json.Marshal(resolveSubjectsRequest{Subjects: subjects})
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">client := &amp;http.Client{Timeout: 60 * time.Second}
+        req, err := http.NewRequestWithContext(ctx, http.MethodPost, usersBaseURL+"/internal/resolve-subjects", bytes.NewReader(body))
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">req.Header.Set("Authorization", "Bearer "+token)
+        req.Header.Set("Content-Type", "application/json")
+
+        resp, err := client.Do(req)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{ _ = resp.Body.Close() }</span>()
+        <span class="cov0" title="0">if resp.StatusCode != http.StatusOK </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("resolve-subjects returned %s", resp.Status)
+        }</span>
+
+        <span class="cov0" title="0">out := map[string]string{}
+        if err := json.NewDecoder(resp.Body).Decode(&amp;out); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return out, nil</span>
 }
 </pre>
 		
@@ -1788,8 +1860,11 @@ type AppCardStatus struct {
         ScopeValue string                 `bson:"scope_value" json:"scope_value"`
         Enabled    bool                   `bson:"enabled" json:"enabled"`
         Label      string                 `bson:"label" json:"label"`
-        CreatedAt  time.Time              `bson:"created_at" json:"created_at"`
-        UpdatedAt  time.Time              `bson:"updated_at" json:"updated_at"`
+        // Platform audit fields (PADR-0001); hard-delete record (PADR-0027), no deleted_* pair.
+        CreatedBy string    `bson:"created_by" json:"created_by"`
+        CreatedAt time.Time `bson:"created_at" json:"created_at"`
+        UpdatedBy string    `bson:"updated_by" json:"updated_by"`
+        UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
 }
 
 // Validate checks that the record satisfies the invariants required by the spec:
@@ -1860,31 +1935,31 @@ const (
 // whatever doc it's given, so CompleteAudit - which only ever populates
 // Status/CompletedAt/ErrorMessage on top of an existing record's ID - must
 // not marshal its unset fields as empty values, or it would overwrite the
-// original ActingUserSub/Action/AttemptedAt with blanks.
+// original ActingUserId/Action/AttemptedAt with blanks.
 type AdminActionAuditLog struct {
-        ID            primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-        ActingUserSub string             `bson:"acting_user_sub,omitempty" json:"acting_user_sub"`
-        Action        string             `bson:"action,omitempty" json:"action"`
-        ResourceID    string             `bson:"resource_id,omitempty" json:"resource_id,omitempty"`
-        Detail        string             `bson:"detail,omitempty" json:"detail,omitempty"`
-        Status        AuditStatus        `bson:"status" json:"status"`
-        AttemptedAt   time.Time          `bson:"attempted_at,omitempty" json:"attempted_at"`
-        CompletedAt   *time.Time         `bson:"completed_at,omitempty" json:"completed_at,omitempty"`
-        ErrorMessage  string             `bson:"error_message,omitempty" json:"error_message,omitempty"`
+        ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+        ActingUserId string             `bson:"acting_user_id,omitempty" json:"acting_user_id"`
+        Action       string             `bson:"action,omitempty" json:"action"`
+        ResourceID   string             `bson:"resource_id,omitempty" json:"resource_id,omitempty"`
+        Detail       string             `bson:"detail,omitempty" json:"detail,omitempty"`
+        Status       AuditStatus        `bson:"status" json:"status"`
+        AttemptedAt  time.Time          `bson:"attempted_at,omitempty" json:"attempted_at"`
+        CompletedAt  *time.Time         `bson:"completed_at,omitempty" json:"completed_at,omitempty"`
+        ErrorMessage string             `bson:"error_message,omitempty" json:"error_message,omitempty"`
 }
 
 // RecordAuditAttempt writes the "attempted" audit record for a write-route
 // mutation before the mutation itself runs. Returns the record's ID for a
 // later CompleteAudit call. Callers must not perform the mutation if this
 // returns an error.
-func RecordAuditAttempt(actingUserSub, action, resourceID, detail string) (primitive.ObjectID, error) <span class="cov0" title="0">{
+func RecordAuditAttempt(actingUserId, action, resourceID, detail string) (primitive.ObjectID, error) <span class="cov0" title="0">{
         entry := &amp;AdminActionAuditLog{
-                ActingUserSub: actingUserSub,
-                Action:        action,
-                ResourceID:    resourceID,
-                Detail:        detail,
-                Status:        AuditAttempted,
-                AttemptedAt:   time.Now().UTC(),
+                ActingUserId: actingUserId,
+                Action:       action,
+                ResourceID:   resourceID,
+                Detail:       detail,
+                Status:       AuditAttempted,
+                AttemptedAt:  time.Now().UTC(),
         }
         return database.Insert(constants.AdminActionAuditLogCollection, entry)
 }</span>
@@ -2159,11 +2234,11 @@ import (
         "time"
 
         "github.com/gin-gonic/gin"
-        "github.com/sweetrpg/admin-api/authz"
         "github.com/sweetrpg/admin-api/constants"
         "github.com/sweetrpg/admin-api/models"
         "github.com/sweetrpg/admin-api/server/middleware"
         apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/authz-client.go/authz"
         "github.com/sweetrpg/common.go/logging"
         "github.com/sweetrpg/mongodb.go/database"
         "go.mongodb.org/mongo-driver/bson"
@@ -2216,6 +2291,7 @@ func createAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
         }</span>
 
         <span class="cov0" title="0">now := time.Now().UTC()
+        viewer := authz.Viewer(c)
         record := &amp;models.AppCardStatus{
                 ScopeType:  models.AppCardStatusScopeService,
                 ScopeValue: req.ScopeValue,
@@ -2223,6 +2299,8 @@ func createAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
                 Label:      req.Label,
                 CreatedAt:  now,
                 UpdatedAt:  now,
+                CreatedBy:  viewer,
+                UpdatedBy:  viewer,
         }
 
         if err := record.Validate(); err != nil </span><span class="cov0" title="0">{
@@ -2230,7 +2308,7 @@ func createAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "upsert_app_card_status", "", record.Label)
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(viewer, "upsert_app_card_status", "", record.Label)
         if err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
                 c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to save app card status"})
@@ -2252,6 +2330,7 @@ func createAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
         <span class="cov0" title="0">if existing != nil </span><span class="cov0" title="0">{
                 record.ID = existing.ID
                 record.CreatedAt = existing.CreatedAt
+                record.CreatedBy = existing.CreatedBy
                 if _, _, err := database.Update(constants.AppCardStatusCollection, record.ID, record); err != nil </span><span class="cov0" title="0">{
                         logging.Logger.Error("Failed to update app card status", "error", err.Error())
                         completeAudit(auditID, models.AuditFailed, err.Error())
@@ -2404,7 +2483,8 @@ func updateAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">updated := &amp;models.AppCardStatus{
+        <span class="cov0" title="0">viewer := authz.Viewer(c)
+        updated := &amp;models.AppCardStatus{
                 ID:         id,
                 ScopeType:  models.AppCardStatusScopeService,
                 ScopeValue: req.ScopeValue,
@@ -2412,6 +2492,8 @@ func updateAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
                 Label:      req.Label,
                 CreatedAt:  existing.CreatedAt,
                 UpdatedAt:  time.Now().UTC(),
+                CreatedBy:  existing.CreatedBy,
+                UpdatedBy:  viewer,
         }
 
         if err := updated.Validate(); err != nil </span><span class="cov0" title="0">{
@@ -2419,7 +2501,7 @@ func updateAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "update_app_card_status", id.Hex(), updated.Label)
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(viewer, "update_app_card_status", id.Hex(), updated.Label)
         if err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
                 c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to update app card status"})
@@ -2466,7 +2548,8 @@ func deleteAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "delete_app_card_status", id.Hex(), "")
+        <span class="cov0" title="0">viewer := authz.Viewer(c)
+        auditID, err := models.RecordAuditAttempt(viewer, "delete_app_card_status", id.Hex(), "")
         if err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
                 c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to delete app card status"})
@@ -2525,11 +2608,11 @@ import (
         "time"
 
         "github.com/gin-gonic/gin"
-        "github.com/sweetrpg/admin-api/authz"
         "github.com/sweetrpg/admin-api/constants"
         "github.com/sweetrpg/admin-api/models"
         "github.com/sweetrpg/admin-api/server/middleware"
         apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/authz-client.go/authz"
         "github.com/sweetrpg/common.go/logging"
         "github.com/sweetrpg/mongodb.go/database"
         "go.mongodb.org/mongo-driver/bson"
@@ -2594,7 +2677,7 @@ func createBanner(c *gin.Context) <span class="cov0" title="0">{
         }</span>
 
         <span class="cov0" title="0">now := time.Now().UTC()
-        sub := c.GetString(middleware.ActingUserSubKey)
+        viewer := authz.Viewer(c)
         banner := &amp;models.BannerMessage{
                 ScopeType:  req.ScopeType,
                 ScopeValue: req.ScopeValue,
@@ -2602,9 +2685,9 @@ func createBanner(c *gin.Context) <span class="cov0" title="0">{
                 Message:    req.Message,
                 StartsAt:   req.StartsAt,
                 ExpiresAt:  req.ExpiresAt,
-                CreatedBy:  sub,
+                CreatedBy:  viewer,
                 CreatedAt:  now,
-                UpdatedBy:  sub,
+                UpdatedBy:  viewer,
                 UpdatedAt:  now,
         }
 
@@ -2613,7 +2696,7 @@ func createBanner(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "create_banner", "", req.Message)
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(viewer, "create_banner", "", req.Message)
         if err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
                 c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to create banner"})
@@ -2771,7 +2854,8 @@ func updateBanner(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">updated := &amp;models.BannerMessage{
+        <span class="cov0" title="0">viewer := authz.Viewer(c)
+        updated := &amp;models.BannerMessage{
                 ID:         id,
                 ScopeType:  req.ScopeType,
                 ScopeValue: req.ScopeValue,
@@ -2781,7 +2865,7 @@ func updateBanner(c *gin.Context) <span class="cov0" title="0">{
                 ExpiresAt:  req.ExpiresAt,
                 CreatedBy:  existing.CreatedBy,
                 CreatedAt:  existing.CreatedAt,
-                UpdatedBy:  c.GetString(middleware.ActingUserSubKey),
+                UpdatedBy:  viewer,
                 UpdatedAt:  time.Now().UTC(),
         }
 
@@ -2790,7 +2874,7 @@ func updateBanner(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "update_banner", id.Hex(), updated.Message)
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(viewer, "update_banner", id.Hex(), updated.Message)
         if err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
                 c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to update banner"})
@@ -2837,7 +2921,8 @@ func deleteBanner(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "delete_banner", id.Hex(), "")
+        <span class="cov0" title="0">viewer := authz.Viewer(c)
+        auditID, err := models.RecordAuditAttempt(viewer, "delete_banner", id.Hex(), "")
         if err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
                 c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to delete banner"})
@@ -2881,7 +2966,7 @@ func parseScope(raw string) (models.ScopeType, string) <span class="cov10" title
 
 import (
         "github.com/gin-gonic/gin"
-        "github.com/sweetrpg/admin-api/authz"
+        "github.com/sweetrpg/authz-client.go/authz"
 )
 
 func SetupHandlers(g *gin.Engine, authzClient *authz.Client) <span class="cov8" title="1">{
@@ -2900,11 +2985,11 @@ import (
         "time"
 
         "github.com/gin-gonic/gin"
-        "github.com/sweetrpg/admin-api/authz"
         "github.com/sweetrpg/admin-api/constants"
         "github.com/sweetrpg/admin-api/models"
         "github.com/sweetrpg/admin-api/server/middleware"
         apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/authz-client.go/authz"
         "github.com/sweetrpg/common.go/logging"
         "github.com/sweetrpg/mongodb.go/database"
         "go.mongodb.org/mongo-driver/bson"
@@ -2961,7 +3046,7 @@ func createMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
         }</span>
 
         <span class="cov0" title="0">now := time.Now().UTC()
-        sub := c.GetString(middleware.ActingUserSubKey)
+        viewer := authz.Viewer(c)
         record := &amp;models.MaintenanceMode{
                 ScopeType:   req.ScopeType,
                 ScopeValue:  req.ScopeValue,
@@ -2970,9 +3055,9 @@ func createMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
                 EndsAt:      req.EndsAt,
                 Label:       req.Label,
                 Description: req.Description,
-                CreatedBy:   sub,
+                CreatedBy:   viewer,
                 CreatedAt:   now,
-                UpdatedBy:   sub,
+                UpdatedBy:   viewer,
                 UpdatedAt:   now,
         }
 
@@ -2981,7 +3066,7 @@ func createMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "upsert_maintenance_mode", "", record.Label)
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(viewer, "upsert_maintenance_mode", "", record.Label)
         if err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
                 c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to save maintenance mode"})
@@ -3149,7 +3234,8 @@ func updateMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">updated := &amp;models.MaintenanceMode{
+        <span class="cov0" title="0">viewer := authz.Viewer(c)
+        updated := &amp;models.MaintenanceMode{
                 ID:          id,
                 ScopeType:   req.ScopeType,
                 ScopeValue:  req.ScopeValue,
@@ -3160,7 +3246,7 @@ func updateMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
                 Description: req.Description,
                 CreatedBy:   existing.CreatedBy,
                 CreatedAt:   existing.CreatedAt,
-                UpdatedBy:   c.GetString(middleware.ActingUserSubKey),
+                UpdatedBy:   viewer,
                 UpdatedAt:   time.Now().UTC(),
         }
 
@@ -3169,7 +3255,7 @@ func updateMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "update_maintenance_mode", id.Hex(), updated.Label)
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(viewer, "update_maintenance_mode", id.Hex(), updated.Label)
         if err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
                 c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to update maintenance mode"})
@@ -3216,7 +3302,8 @@ func deleteMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "delete_maintenance_mode", id.Hex(), "")
+        <span class="cov0" title="0">viewer := authz.Viewer(c)
+        auditID, err := models.RecordAuditAttempt(viewer, "delete_maintenance_mode", id.Hex(), "")
         if err != nil </span><span class="cov0" title="0">{
                 logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
                 c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to delete maintenance mode"})
@@ -3301,80 +3388,16 @@ func parseMaintenanceScope(raw string) (models.MaintenanceScopeType, string) <sp
 package middleware
 
 import (
-        "net/http"
-        "strings"
-
         "github.com/gin-gonic/gin"
-        "github.com/sweetrpg/admin-api/authz"
-        "github.com/sweetrpg/admin-api/constants"
-        apiv "github.com/sweetrpg/api-core.go/vo"
-        "github.com/sweetrpg/common.go/logging"
-)
-
-const (
-        bearerPrefix = "Bearer "
-
-        // ActingUserSubKey is the gin.Context key write handlers read to get the
-        // attributed acting user after WriteAuth has validated the request.
-        ActingUserSubKey = "actingUserSub"
+        "github.com/sweetrpg/authz-client.go/authz"
 )
 
 // WriteAuth requires a forwarded user bearer token carrying the admin role, verified
-// against auth-api's /authz/check. On success, the acting user (from auth-api's verified
-// token subject) is stashed on the context under ActingUserSubKey for handlers to
-// attribute their audit records to.
-func WriteAuth(client *authz.Client) gin.HandlerFunc <span class="cov10" title="4">{
-        return func(c *gin.Context) </span><span class="cov10" title="4">{
-                token := bearerToken(c)
-                if token == "" </span><span class="cov1" title="1">{
-                        unauthorized(c)
-                        return
-                }</span>
-
-                <span class="cov8" title="3">result, err := client.Check(c.Request.Context(), token, constants.ServiceName)
-                if err != nil </span><span class="cov1" title="1">{
-                        if _, ok := err.(authz.InvalidTokenError); ok </span><span class="cov1" title="1">{
-                                unauthorized(c)
-                                return
-                        }</span>
-                        <span class="cov0" title="0">logging.Logger.Error("authz check failed", "error", err.Error())
-                        c.AbortWithStatusJSON(http.StatusServiceUnavailable, apiv.ErrorVO{
-                                Error:   "authz_unavailable",
-                                Message: "Unable to verify authorization",
-                        })
-                        return</span>
-                }
-
-                <span class="cov5" title="2">if !result.Allowed || !authz.HasRole(result.Roles, authz.RoleAdmin) </span><span class="cov1" title="1">{
-                        forbidden(c)
-                        return
-                }</span>
-
-                <span class="cov1" title="1">c.Set(ActingUserSubKey, result.Sub)
-                c.Next()</span>
-        }
-}
-
-func bearerToken(c *gin.Context) string <span class="cov10" title="4">{
-        auth := c.GetHeader("Authorization")
-        if !strings.HasPrefix(auth, bearerPrefix) </span><span class="cov1" title="1">{
-                return ""
-        }</span>
-        <span class="cov8" title="3">return strings.TrimPrefix(auth, bearerPrefix)</span>
-}
-
-func unauthorized(c *gin.Context) <span class="cov5" title="2">{
-        c.AbortWithStatusJSON(http.StatusUnauthorized, apiv.ErrorVO{
-                Error:   "unauthorized",
-                Message: "missing or invalid credentials",
-        })
-}</span>
-
-func forbidden(c *gin.Context) <span class="cov1" title="1">{
-        c.AbortWithStatusJSON(http.StatusForbidden, apiv.ErrorVO{
-                Error:   "forbidden",
-                Message: "caller does not have a qualifying role",
-        })
+// against auth-api's /authz/check. On success, the resolved canonical user ID is
+// stashed in the context (read via authz.Viewer(c)) for handlers to attribute their
+// audit records to. Fails closed if the acting user cannot be resolved to a canonical ID.
+func WriteAuth(client *authz.Client) gin.HandlerFunc <span class="cov10" title="5">{
+        return authz.RequireAnyRole(client, "admin-api", authz.RoleAdmin)
 }</span>
 </pre>
 		
