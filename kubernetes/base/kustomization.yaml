@@ -7,5 +7,6 @@ resources:
   - configmaps.yaml
 
   - deployment.yaml
+  - hpa.yaml
   - service.yaml
   - service-latest.yaml
