@@ -17,11 +17,10 @@ import (
 	"github.com/grafana/pyroscope-go"
 	"github.com/joho/godotenv"
 	"github.com/penglongli/gin-metrics/ginmetrics"
-	sloggin "github.com/samber/slog-gin"
+	"github.com/samber/slog-gin"
 	actuator "github.com/sinhashubham95/go-actuator"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"github.com/sweetrpg/admin-api/authz"
 	"github.com/sweetrpg/admin-api/constants"
 	"github.com/sweetrpg/admin-api/docs"
 	"github.com/sweetrpg/admin-api/models"
@@ -30,6 +29,7 @@ import (
 	"github.com/sweetrpg/api-core.go/featureflags"
 	"github.com/sweetrpg/api-core.go/tracing"
 	"github.com/sweetrpg/api-core.go/vo"
+	"github.com/sweetrpg/authz-client.go/authz"
 	"github.com/sweetrpg/common.go/logging"
 	"github.com/sweetrpg/common.go/util"
 	"github.com/sweetrpg/mongodb.go/database"
@@ -101,7 +101,7 @@ func main() {
 	// Add rate limiter
 	r.Use(RateLimiter())
 
-	authzClient := authz.NewClient(util.GetEnv(constants.AUTH_API_URL, ""))
+	authzClient := authz.NewClient(util.GetEnv(constants.AUTH_API_URL, ""), util.GetEnv(constants.USERS_API_URL, ""))
 	server.SetupHandlers(r, authzClient)
 
 	_ = r.Run(util.GetEnv(apiconstants.BIND_ADDRESS, ":8000"))

@@ -1,4 +1,11 @@
 
+## 0.11.0 - 2026-09-07
+
+### Added
+- Adopt authz-client v0.2.0 for canonical user IDs
+
+
+
 ## 0.10.1 - 2026-09-07
 
 ### Fixed

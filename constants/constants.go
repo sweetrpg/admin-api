@@ -10,6 +10,12 @@ const (
 	// AUTH_API_URL is auth-api's base URL, used by server/middleware.WriteAuth to verify
 	// forwarded user bearer tokens via /authz/check.
 	AUTH_API_URL = "AUTH_API_URL"
+
+	// USERS_API_URL points at users-api's base URL (e.g.
+	// http://api-v1.sweetrpg-users.svc.cluster.local:8000), used to resolve the verified
+	// subject to its canonical users._id for write-path created_by/updated_by stamps. See
+	// canonical-user-ids-across-services in sweetrpg/platform.
+	USERS_API_URL = "USERS_API_URL"
 )
 
 // Value constants
