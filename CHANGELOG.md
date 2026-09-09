@@ -1,4 +1,11 @@
 
+## 0.12.0 - 2026-09-09
+
+### Added
+- Replace process-wide bucket with shared api-core middleware (#106)
+
+
+
 ## 0.11.0 - 2026-09-07
 
 ### Added

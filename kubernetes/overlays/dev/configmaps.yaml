@@ -23,3 +23,12 @@ data:
   SENTRY_RELEASE: "1"
   AUTH_API_URL: http://api-v1.sweetrpg-auth.svc.cluster.local:8000
   USERS_API_URL: http://api-v1.sweetrpg-users.svc.cluster.local:8000
+  # Per-client/IP rate limiting (platform rate-limiting capability, #106). api-core defaults.
+  RATE_LIMIT_CHEAP: "120"
+  RATE_LIMIT_CHEAP_WINDOW_SECONDS: "60"
+  RATE_LIMIT_STANDARD: "30"
+  RATE_LIMIT_STANDARD_WINDOW_SECONDS: "60"
+  # Namespace cache Service, backs the distributed rate-limit counters. REDIS_PASS comes from an
+  # ExternalSecret (#106).
+  REDIS_HOST: cache.sweetrpg-admin.svc.cluster.local
+  REDIS_PORT: "6379"

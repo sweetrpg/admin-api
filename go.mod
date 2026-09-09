@@ -4,7 +4,7 @@ go 1.26.5
 
 require (
 	github.com/getsentry/sentry-go v0.49.0
-	github.com/gin-contrib/cors v1.7.7
+	github.com/gin-contrib/cors v1.7.8
 	github.com/gin-gonic/gin v1.12.0
 	github.com/grafana/pyroscope-go v1.4.2
 	github.com/joho/godotenv v1.5.1
@@ -14,7 +14,7 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
-	github.com/sweetrpg/api-core.go v0.1.1
+	github.com/sweetrpg/api-core.go v0.3.1
 	github.com/sweetrpg/authz-client.go v0.2.0
 	github.com/sweetrpg/common.go v0.0.16
 	github.com/sweetrpg/mongodb.go v0.0.193
@@ -22,7 +22,6 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.71.0
 	go.opentelemetry.io/otel v1.46.0
 	go.opentelemetry.io/otel/trace v1.46.0
-	golang.org/x/time v0.15.0
 )
 
 require (
@@ -57,6 +56,7 @@ require (
 	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
+	github.com/gomodule/redigo v1.9.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.11 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect

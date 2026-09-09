@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"log/slog"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -27,14 +25,14 @@ import (
 	"github.com/sweetrpg/admin-api/server"
 	apiconstants "github.com/sweetrpg/api-core.go/constants"
 	"github.com/sweetrpg/api-core.go/featureflags"
+	"github.com/sweetrpg/api-core.go/ratelimit"
 	"github.com/sweetrpg/api-core.go/tracing"
-	"github.com/sweetrpg/api-core.go/vo"
+	apiutil "github.com/sweetrpg/api-core.go/util"
 	"github.com/sweetrpg/authz-client.go/authz"
 	"github.com/sweetrpg/common.go/logging"
 	"github.com/sweetrpg/common.go/util"
 	"github.com/sweetrpg/mongodb.go/database"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-	"golang.org/x/time/rate"
 )
 
 // @title Admin API service
@@ -98,8 +96,19 @@ func main() {
 	// Swagger
 	setupSwagger(r)
 
-	// Add rate limiter
-	r.Use(RateLimiter())
+	// Per-client/IP rate limiter (Redis-backed, fail-closed). Replaces the process-wide bucket.
+	redisPool := apiutil.RedisPool()
+	if redisPool != nil {
+		pingCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		if err := ratelimit.Ping(pingCtx, redisPool); err != nil {
+			logging.Logger.Error("REDIS_HOST is configured but unreachable at startup; rate-limited requests will fail closed until it recovers",
+				"error", err.Error())
+		}
+		cancel()
+	} else {
+		logging.Logger.Warn("REDIS_HOST is not configured; rate limiting will fail closed (503) on every limited request")
+	}
+	r.Use(ratelimit.Middleware(redisPool, ratelimit.DefaultOptions()))
 
 	authzClient := authz.NewClient(util.GetEnv(constants.AUTH_API_URL, ""), util.GetEnv(constants.USERS_API_URL, ""))
 	server.SetupHandlers(r, authzClient)
@@ -249,20 +258,4 @@ func setupMetrics(r *gin.Engine) {
 	m.SetSlowTime(10)
 	m.SetDuration([]float64{0.1, 0.3, 1.2, 5, 10})
 	m.Use(r)
-}
-
-func RateLimiter() gin.HandlerFunc {
-	limiter := rate.NewLimiter(1, util.GetEnvInt(apiconstants.RATE_LIMIT, 10))
-
-	return func(c *gin.Context) {
-		if limiter.Allow() {
-			c.Next()
-		} else {
-			logging.Logger.Warn(fmt.Sprintf("Rate limit exceeded for request: %v", c.Request))
-			c.JSON(http.StatusTooManyRequests, vo.ErrorVO{
-				Error:   apiconstants.ErrorRateLimited,
-				Message: "Limit exceeded",
-			})
-		}
-	}
 }
