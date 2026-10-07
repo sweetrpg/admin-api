@@ -2,12 +2,13 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sweetrpg/admin-api/authz"
+	"github.com/sweetrpg/authz-client.go/authz"
 	"github.com/sweetrpg/common.go/logging"
 )
 
@@ -27,7 +28,15 @@ func TestWriteRoutesRequireAuth(t *testing.T) {
 	logging.Init()
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	SetupHandlers(r, authz.NewClient(""), noopIssueCreator{}, func(c *gin.Context) { c.Next() })
+	authAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/profile" {
+			_ = json.NewEncoder(w).Encode(map[string]string{"user_id": "test-user-id"})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(authz.CheckResponse{Allowed: true, Roles: []string{authz.RoleAdmin}, Sub: "auth0|user-sub"})
+	}))
+	t.Cleanup(authAPI.Close)
+	SetupHandlers(r, authz.NewClient(authAPI.URL, authAPI.URL), noopIssueCreator{}, func(c *gin.Context) { c.Next() })
 
 	writeRoutes := []struct {
 		method string

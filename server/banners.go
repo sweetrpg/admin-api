@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sweetrpg/admin-api/authz"
 	"github.com/sweetrpg/admin-api/constants"
 	"github.com/sweetrpg/admin-api/models"
 	"github.com/sweetrpg/admin-api/server/middleware"
 	apiv "github.com/sweetrpg/api-core.go/vo"
+	"github.com/sweetrpg/authz-client.go/authz"
 	"github.com/sweetrpg/common.go/logging"
 	"github.com/sweetrpg/mongodb.go/database"
 	"go.mongodb.org/mongo-driver/bson"
@@ -76,7 +76,7 @@ func createBanner(c *gin.Context) {
 	}
 
 	now := time.Now().UTC()
-	sub := c.GetString(middleware.ActingUserSubKey)
+	viewer := authz.Viewer(c)
 	banner := &models.BannerMessage{
 		ScopeType:  req.ScopeType,
 		ScopeValue: req.ScopeValue,
@@ -84,9 +84,9 @@ func createBanner(c *gin.Context) {
 		Message:    req.Message,
 		StartsAt:   req.StartsAt,
 		ExpiresAt:  req.ExpiresAt,
-		CreatedBy:  sub,
+		CreatedBy:  viewer,
 		CreatedAt:  now,
-		UpdatedBy:  sub,
+		UpdatedBy:  viewer,
 		UpdatedAt:  now,
 	}
 
@@ -95,7 +95,7 @@ func createBanner(c *gin.Context) {
 		return
 	}
 
-	auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "create_banner", "", req.Message)
+	auditID, err := models.RecordAuditAttempt(viewer, "create_banner", "", req.Message)
 	if err != nil {
 		logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
 		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to create banner"})
@@ -253,6 +253,7 @@ func updateBanner(c *gin.Context) {
 		return
 	}
 
+	viewer := authz.Viewer(c)
 	updated := &models.BannerMessage{
 		ID:         id,
 		ScopeType:  req.ScopeType,
@@ -263,7 +264,7 @@ func updateBanner(c *gin.Context) {
 		ExpiresAt:  req.ExpiresAt,
 		CreatedBy:  existing.CreatedBy,
 		CreatedAt:  existing.CreatedAt,
-		UpdatedBy:  c.GetString(middleware.ActingUserSubKey),
+		UpdatedBy:  viewer,
 		UpdatedAt:  time.Now().UTC(),
 	}
 
@@ -272,7 +273,7 @@ func updateBanner(c *gin.Context) {
 		return
 	}
 
-	auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "update_banner", id.Hex(), updated.Message)
+	auditID, err := models.RecordAuditAttempt(viewer, "update_banner", id.Hex(), updated.Message)
 	if err != nil {
 		logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
 		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to update banner"})
@@ -319,7 +320,8 @@ func deleteBanner(c *gin.Context) {
 		return
 	}
 
-	auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "delete_banner", id.Hex(), "")
+	viewer := authz.Viewer(c)
+	auditID, err := models.RecordAuditAttempt(viewer, "delete_banner", id.Hex(), "")
 	if err != nil {
 		logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
 		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to delete banner"})

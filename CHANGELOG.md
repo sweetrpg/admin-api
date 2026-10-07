@@ -1,4 +1,25 @@
 
+## 0.12.0 - 2026-09-09
+
+### Added
+- Replace process-wide bucket with shared api-core middleware (#106)
+
+
+
+## 0.11.0 - 2026-09-07
+
+### Added
+- Adopt authz-client v0.2.0 for canonical user IDs
+
+
+
+## 0.10.1 - 2026-09-07
+
+### Fixed
+- Refresh interval
+
+
+
 ## 0.10.0 - 2026-09-04
 
 ### Added

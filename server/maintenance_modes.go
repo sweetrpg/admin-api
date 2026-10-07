@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sweetrpg/admin-api/authz"
 	"github.com/sweetrpg/admin-api/constants"
 	"github.com/sweetrpg/admin-api/models"
 	"github.com/sweetrpg/admin-api/server/middleware"
 	apiv "github.com/sweetrpg/api-core.go/vo"
+	"github.com/sweetrpg/authz-client.go/authz"
 	"github.com/sweetrpg/common.go/logging"
 	"github.com/sweetrpg/mongodb.go/database"
 	"go.mongodb.org/mongo-driver/bson"
@@ -67,7 +67,7 @@ func createMaintenanceMode(c *gin.Context) {
 	}
 
 	now := time.Now().UTC()
-	sub := c.GetString(middleware.ActingUserSubKey)
+	viewer := authz.Viewer(c)
 	record := &models.MaintenanceMode{
 		ScopeType:   req.ScopeType,
 		ScopeValue:  req.ScopeValue,
@@ -76,9 +76,9 @@ func createMaintenanceMode(c *gin.Context) {
 		EndsAt:      req.EndsAt,
 		Label:       req.Label,
 		Description: req.Description,
-		CreatedBy:   sub,
+		CreatedBy:   viewer,
 		CreatedAt:   now,
-		UpdatedBy:   sub,
+		UpdatedBy:   viewer,
 		UpdatedAt:   now,
 	}
 
@@ -87,7 +87,7 @@ func createMaintenanceMode(c *gin.Context) {
 		return
 	}
 
-	auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "upsert_maintenance_mode", "", record.Label)
+	auditID, err := models.RecordAuditAttempt(viewer, "upsert_maintenance_mode", "", record.Label)
 	if err != nil {
 		logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
 		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to save maintenance mode"})
@@ -255,6 +255,7 @@ func updateMaintenanceMode(c *gin.Context) {
 		return
 	}
 
+	viewer := authz.Viewer(c)
 	updated := &models.MaintenanceMode{
 		ID:          id,
 		ScopeType:   req.ScopeType,
@@ -266,7 +267,7 @@ func updateMaintenanceMode(c *gin.Context) {
 		Description: req.Description,
 		CreatedBy:   existing.CreatedBy,
 		CreatedAt:   existing.CreatedAt,
-		UpdatedBy:   c.GetString(middleware.ActingUserSubKey),
+		UpdatedBy:   viewer,
 		UpdatedAt:   time.Now().UTC(),
 	}
 
@@ -275,7 +276,7 @@ func updateMaintenanceMode(c *gin.Context) {
 		return
 	}
 
-	auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "update_maintenance_mode", id.Hex(), updated.Label)
+	auditID, err := models.RecordAuditAttempt(viewer, "update_maintenance_mode", id.Hex(), updated.Label)
 	if err != nil {
 		logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
 		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to update maintenance mode"})
@@ -322,7 +323,8 @@ func deleteMaintenanceMode(c *gin.Context) {
 		return
 	}
 
-	auditID, err := models.RecordAuditAttempt(c.GetString(middleware.ActingUserSubKey), "delete_maintenance_mode", id.Hex(), "")
+	viewer := authz.Viewer(c)
+	auditID, err := models.RecordAuditAttempt(viewer, "delete_maintenance_mode", id.Hex(), "")
 	if err != nil {
 		logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
 		c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to delete maintenance mode"})

@@ -41,6 +41,17 @@ log aggregation systems while keeping HTTP and application concerns separate.
   do their own bounded-TTL caching client-side - a second cache layer here would only add
   staleness without a clear benefit for this service's read volume.
 
+## Rate limiting
+
+Per-client/IP rate limiting is on by default via the shared `api-core.go/ratelimit` middleware
+(Redis-backed counters keyed by `X-API-Key` else client IP, `cheap` tier for `/status/*`,
+fail-closed 503 when Redis is unreachable, 429 on exceed). This replaced the process-wide
+`rate.NewLimiter` bucket, which one busy caller could exhaust for everyone. `REDIS_HOST`/
+`REDIS_PORT` are in the dev configmap; `REDIS_PASS` comes from the `api-cache` `ExternalSecret`.
+Tune with `RATE_LIMIT_CHEAP`/`RATE_LIMIT_CHEAP_WINDOW_SECONDS`/`RATE_LIMIT_STANDARD`/
+`RATE_LIMIT_STANDARD_WINDOW_SECONDS`. See `platform`'s
+`openspec/changes/fix-rate-limiting-per-client-ip`.
+
 ## Committing Code
 
 Use [Conventional Commits](https://www.conventionalcommits.org/):
