@@ -11,10 +11,11 @@ resources:
     - middlewares.yaml
     - password.yaml
     - pod-monitor.yaml
+    - secrets/cache.yaml
     - secrets/db-creds.yaml
     - secrets/db.yaml
+    - secrets/feedback.yaml
     - secrets/misc.yaml
-    - secrets/cache.yaml
 
 labels:
     - pairs:
