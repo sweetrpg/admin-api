@@ -63,25 +63,31 @@
 				
 				<option value="file3">github.com/sweetrpg/admin-api/docs/docs.go (0.0%)</option>
 				
-				<option value="file4">github.com/sweetrpg/admin-api/models/app_card_status.go (66.7%)</option>
+				<option value="file4">github.com/sweetrpg/admin-api/feedback/client.go (77.8%)</option>
 				
-				<option value="file5">github.com/sweetrpg/admin-api/models/audit.go (0.0%)</option>
+				<option value="file5">github.com/sweetrpg/admin-api/feedback/ratelimit.go (0.0%)</option>
 				
-				<option value="file6">github.com/sweetrpg/admin-api/models/banner.go (88.9%)</option>
+				<option value="file6">github.com/sweetrpg/admin-api/models/app_card_status.go (66.7%)</option>
 				
-				<option value="file7">github.com/sweetrpg/admin-api/models/maintenance_mode.go (85.7%)</option>
+				<option value="file7">github.com/sweetrpg/admin-api/models/audit.go (0.0%)</option>
 				
-				<option value="file8">github.com/sweetrpg/admin-api/server/app_card_statuses.go (10.6%)</option>
+				<option value="file8">github.com/sweetrpg/admin-api/models/banner.go (88.9%)</option>
 				
-				<option value="file9">github.com/sweetrpg/admin-api/server/banners.go (11.8%)</option>
+				<option value="file9">github.com/sweetrpg/admin-api/models/maintenance_mode.go (85.7%)</option>
 				
-				<option value="file10">github.com/sweetrpg/admin-api/server/handlers.go (100.0%)</option>
+				<option value="file10">github.com/sweetrpg/admin-api/server/app_card_statuses.go (10.6%)</option>
 				
-				<option value="file11">github.com/sweetrpg/admin-api/server/maintenance_modes.go (15.2%)</option>
+				<option value="file11">github.com/sweetrpg/admin-api/server/banners.go (11.8%)</option>
 				
-				<option value="file12">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (100.0%)</option>
+				<option value="file12">github.com/sweetrpg/admin-api/server/feedback.go (100.0%)</option>
 				
-				<option value="file13">github.com/sweetrpg/admin-api/server/status.go (45.5%)</option>
+				<option value="file13">github.com/sweetrpg/admin-api/server/handlers.go (100.0%)</option>
+				
+				<option value="file14">github.com/sweetrpg/admin-api/server/maintenance_modes.go (15.2%)</option>
+				
+				<option value="file15">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (100.0%)</option>
+				
+				<option value="file16">github.com/sweetrpg/admin-api/server/status.go (45.5%)</option>
 				
 				</select>
 			</div>
@@ -127,6 +133,7 @@ import (
         ginSwagger "github.com/swaggo/gin-swagger"
         "github.com/sweetrpg/admin-api/constants"
         "github.com/sweetrpg/admin-api/docs"
+        "github.com/sweetrpg/admin-api/feedback"
         "github.com/sweetrpg/admin-api/models"
         "github.com/sweetrpg/admin-api/server"
         apiconstants "github.com/sweetrpg/api-core.go/constants"
@@ -217,7 +224,8 @@ func main() <span class="cov0" title="0">{
         <span class="cov0" title="0">r.Use(ratelimit.Middleware(redisPool, ratelimit.DefaultOptions()))
 
         authzClient := authz.NewClient(util.GetEnv(constants.AUTH_API_URL, ""), util.GetEnv(constants.USERS_API_URL, ""))
-        server.SetupHandlers(r, authzClient)
+        issueCreator := feedback.NewGitHubIssueClient(util.GetEnv(constants.GITHUB_FEEDBACK_TOKEN, ""))
+        server.SetupHandlers(r, authzClient, issueCreator, feedback.RateLimitMiddleware(redisPool))
 
         _ = r.Run(util.GetEnv(apiconstants.BIND_ADDRESS, ":8000"))</span>
 }
@@ -1175,6 +1183,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/feedback": {
+            "post": {
+                "description": "Accept an anonymous bug report or feature request and file it as a GitHub Issue on sweetrpg/platform, labeled source:in-app-feedback plus bug or feature. No GitHub credentials are ever requested from or exposed to the caller. Subject to a feedback-specific rate limit stricter than this service's default.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feedback"
+                ],
+                "summary": "Submit feedback",
+                "parameters": [
+                    {
+                        "description": "Feedback submission",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.createFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.feedbackAcceptedResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "missing/invalid type, title, or body, or title/body exceeds the length cap",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "429": {
+                        "description": "feedback-specific rate limit exceeded",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "502": {
+                        "description": "GitHub API call failed or timed out",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "503": {
+                        "description": "rate-limit backend unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
         "/maintenance-modes": {
             "get": {
                 "description": "Returns every maintenance-mode record (platform and every known service scope) regardless of enabled state, for admin-web's management view.",
@@ -1682,6 +1748,51 @@ const docTemplate = `{
                 }
             }
         },
+        "server.createFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "body",
+                "title",
+                "type"
+            ],
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Searching for 9780786965601 returns zero results, even though the volume exists in the catalog."
+                },
+                "rendered_at": {
+                    "type": "string"
+                },
+                "reporter_email": {
+                    "type": "string",
+                    "example": "reporter@example.com"
+                },
+                "source": {
+                    "type": "string",
+                    "example": "catalog-web:/catalog/search"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Catalog search returns no results for exact ISBN match"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "bug"
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.feedbackAcceptedResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "accepted"
+                }
+            }
+        },
         "server.maintenanceModeRequest": {
             "type": "object",
             "required": [
@@ -1813,7 +1924,135 @@ func init() <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package models
+		<pre class="file" id="file4" style="display: none">// Package feedback implements the anonymous-feedback-to-GitHub-Issue proxy: a single
+// IssueCreator interface backed by the GitHub Issues API, kept separate from the HTTP handler
+// in server/feedback.go so the handler can be unit-tested against a fake creator.
+package feedback
+
+import (
+        "context"
+        "fmt"
+        "net/http"
+        "time"
+
+        "github.com/google/go-github/v76/github"
+)
+
+// Owner and Repo identify the sweetrpg/platform meta-repo that every feedback submission
+// becomes an issue on - see design.md's "no per-service repo routing" decision.
+const (
+        Owner = "sweetrpg"
+        Repo  = "platform"
+
+        // createIssueTimeout bounds the GitHub API call so a stalled connection fails fast and
+        // the caller gets a prompt 502 rather than hanging past their own timeout.
+        createIssueTimeout = 10 * time.Second
+)
+
+// IssueCreator creates a GitHub Issue from a feedback submission. Implemented by
+// GitHubIssueClient; tests substitute a fake.
+type IssueCreator interface {
+        CreateIssue(ctx context.Context, title, body string, labels []string) error
+}
+
+// GitHubIssueClient creates issues on sweetrpg/platform via the GitHub REST API using a
+// service-owned token scoped to Issues:write on that one repo (see design.md).
+type GitHubIssueClient struct {
+        client *github.Client
+}
+
+// NewGitHubIssueClient builds a client authenticated with the given token.
+func NewGitHubIssueClient(token string) *GitHubIssueClient <span class="cov0" title="0">{
+        return &amp;GitHubIssueClient{client: github.NewClient(nil).WithAuthToken(token)}
+}</span>
+
+// CreateIssue creates a labeled issue on sweetrpg/platform. A non-nil error means the caller
+// should treat the submission as failed (502/503) - this never retries internally, per
+// design.md's "no partial state to reconcile" decision.
+func (c *GitHubIssueClient) CreateIssue(ctx context.Context, title, body string, labels []string) error <span class="cov10" title="2">{
+        ctx, cancel := context.WithTimeout(ctx, createIssueTimeout)
+        defer cancel()
+
+        _, resp, err := c.client.Issues.Create(ctx, Owner, Repo, &amp;github.IssueRequest{
+                Title:  &amp;title,
+                Body:   &amp;body,
+                Labels: &amp;labels,
+        })
+        if err != nil </span><span class="cov1" title="1">{
+                return fmt.Errorf("feedback: create github issue: %w", err)
+        }</span>
+        <span class="cov1" title="1">if resp.StatusCode != http.StatusCreated </span><span class="cov0" title="0">{
+                return fmt.Errorf("feedback: create github issue: unexpected status %d", resp.StatusCode)
+        }</span>
+        <span class="cov1" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package feedback
+
+import (
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+        "github.com/gomodule/redigo/redis"
+        "github.com/sweetrpg/admin-api/constants"
+        apicoreconstants "github.com/sweetrpg/api-core.go/constants"
+        "github.com/sweetrpg/api-core.go/ratelimit"
+        "github.com/sweetrpg/api-core.go/util"
+        apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/common.go/logging"
+)
+
+// tierFeedback is this route's own rate-limit tier name, kept separate from
+// api-core.go/ratelimit's cheap/standard tiers so it doesn't change the budget for any other
+// admin-api route (see design.md's "dedicated feedback-specific rate-limit tier" decision).
+const tierFeedback = "feedback"
+
+// RateLimitMiddleware enforces a per-client budget on just the route it's mounted on, stricter
+// than and layered on top of admin-api's existing service-wide limiter. Fails closed (503) if
+// pool is nil or Redis is unreachable, matching api-core.go/ratelimit.Middleware's behavior.
+func RateLimitMiddleware(pool *redis.Pool) gin.HandlerFunc <span class="cov0" title="0">{
+        limiter := ratelimit.New(pool, map[string]ratelimit.Tier{
+                tierFeedback: {
+                        Limit:  util.GetEnvInt(constants.RATE_LIMIT_FEEDBACK, constants.RateLimitFeedbackDefault),
+                        Window: util.GetEnvInt(constants.RATE_LIMIT_FEEDBACK_WINDOW_SECONDS, constants.RateLimitFeedbackWindowDefault),
+                },
+        })
+
+        return func(c *gin.Context) </span><span class="cov0" title="0">{
+                if pool == nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("Feedback rate-limit store not configured; rejecting request (fail closed)")
+                        c.AbortWithStatusJSON(http.StatusServiceUnavailable, apiv.ErrorVO{
+                                Error:   apicoreconstants.ErrorRateLimitUnavailable,
+                                Message: "Rate limiting is temporarily unavailable",
+                        })
+                        return
+                }</span>
+
+                <span class="cov0" title="0">clientKey := ratelimit.ClientKey(c)
+                allowed, err := limiter.Allow(c.Request.Context(), clientKey, tierFeedback)
+                if err != nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("Feedback rate-limit backend unreachable; rejecting request (fail closed)", "error", err.Error())
+                        c.AbortWithStatusJSON(http.StatusServiceUnavailable, apiv.ErrorVO{
+                                Error:   apicoreconstants.ErrorRateLimitUnavailable,
+                                Message: "Rate limiting is temporarily unavailable",
+                        })
+                        return
+                }</span>
+                <span class="cov0" title="0">if !allowed </span><span class="cov0" title="0">{
+                        logging.Logger.Warn("Feedback rate limit exceeded", "client", clientKey)
+                        c.AbortWithStatusJSON(http.StatusTooManyRequests, apiv.ErrorVO{
+                                Error:   apicoreconstants.ErrorRateLimited,
+                                Message: "Limit exceeded",
+                        })
+                        return
+                }</span>
+                <span class="cov0" title="0">c.Next()</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package models
 
 import (
         "context"
@@ -1892,7 +2131,7 @@ func EnsureAppCardStatusIndexes(ctx context.Context) error <span class="cov0" ti
 }</span>
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package models
+		<pre class="file" id="file7" style="display: none">package models
 
 import (
         "context"
@@ -1989,7 +2228,7 @@ func EnsureAuditIndexes(ctx context.Context) error <span class="cov0" title="0">
 }</span>
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">// Package models defines the persisted document shapes for admin-api.
+		<pre class="file" id="file8" style="display: none">// Package models defines the persisted document shapes for admin-api.
 package models
 
 import (
@@ -2122,7 +2361,7 @@ func EnsureIndexes(ctx context.Context) error <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package models
+		<pre class="file" id="file9" style="display: none">package models
 
 import (
         "context"
@@ -2219,7 +2458,7 @@ func EnsureMaintenanceModeIndexes(ctx context.Context) error <span class="cov0" 
 }</span>
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package server
+		<pre class="file" id="file10" style="display: none">package server
 
 import (
         "net/http"
@@ -2592,7 +2831,7 @@ func parseAppCardScope(raw string) (string, string) <span class="cov10" title="8
 }
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package server
+		<pre class="file" id="file11" style="display: none">package server
 
 import (
         "net/http"
@@ -2955,22 +3194,156 @@ func parseScope(raw string) (models.ScopeType, string) <span class="cov10" title
 }
 </pre>
 		
-		<pre class="file" id="file10" style="display: none">package server
+		<pre class="file" id="file12" style="display: none">package server
+
+import (
+        "fmt"
+        "net/http"
+        "strings"
+        "time"
+
+        "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/admin-api/feedback"
+        apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/common.go/logging"
+)
+
+// feedbackTypeBug and feedbackTypeFeature are the only accepted values for createFeedbackRequest.Type.
+const (
+        feedbackTypeBug     = "bug"
+        feedbackTypeFeature = "feature"
+)
+
+// createFeedbackRequest is the payload accepted by POST /feedback. Website and RenderedAt back
+// the bot-detection check (honeypot + minimum fill-time); real users never populate Website
+// and never submit faster than FeedbackMinFillTime after RenderedAt - see design.md.
+type createFeedbackRequest struct {
+        Type          string     `json:"type" binding:"required" example:"bug"`
+        Title         string     `json:"title" binding:"required" example:"Catalog search returns no results for exact ISBN match"`
+        Body          string     `json:"body" binding:"required" example:"Searching for 9780786965601 returns zero results, even though the volume exists in the catalog."`
+        ReporterEmail string     `json:"reporter_email,omitempty" example:"reporter@example.com"`
+        Source        string     `json:"source,omitempty" example:"catalog-web:/catalog/search"`
+        Website       string     `json:"website,omitempty"`
+        RenderedAt    *time.Time `json:"rendered_at,omitempty"`
+}
+
+// feedbackAcceptedResponse is the uniform success body - identical whether a GitHub Issue was
+// actually created or the submission was silently discarded as bot traffic. Deliberately gives
+// a bot no signal about which outcome occurred.
+type feedbackAcceptedResponse struct {
+        Status string `json:"status" example:"accepted"`
+}
+
+func setupFeedbackHandlers(g *gin.Engine, issueCreator feedback.IssueCreator, rateLimit gin.HandlerFunc) <span class="cov10" title="14">{
+        logging.Logger.Info("Setting up feedback endpoint handlers...")
+
+        g.POST("/feedback", rateLimit, createFeedback(issueCreator))
+}</span>
+
+// Submit feedback.
+//
+//        @Summary                Submit feedback
+//        @Description        Accept an anonymous bug report or feature request and file it as a GitHub Issue on sweetrpg/platform, labeled source:in-app-feedback plus bug or feature. No GitHub credentials are ever requested from or exposed to the caller. Subject to a feedback-specific rate limit stricter than this service's default.
+//        @Tags                        feedback
+//        @Accept                        json
+//        @Produce                json
+//        @Param                        body        body                createFeedbackRequest        true        "Feedback submission"
+//        @Success                200                {object}        feedbackAcceptedResponse
+//        @Failure                400                {object}        apiv.ErrorVO        "missing/invalid type, title, or body, or title/body exceeds the length cap"
+//        @Failure                429                {object}        apiv.ErrorVO        "feedback-specific rate limit exceeded"
+//        @Failure                502                {object}        apiv.ErrorVO        "GitHub API call failed or timed out"
+//        @Failure                503                {object}        apiv.ErrorVO        "rate-limit backend unavailable"
+//        @Router                        /feedback [post]
+func createFeedback(issueCreator feedback.IssueCreator) gin.HandlerFunc <span class="cov10" title="14">{
+        return func(c *gin.Context) </span><span class="cov10" title="14">{
+                var req createFeedbackRequest
+                if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov4" title="3">{
+                        c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: err.Error()})
+                        return
+                }</span>
+
+                <span class="cov9" title="11">if req.Type != feedbackTypeBug &amp;&amp; req.Type != feedbackTypeFeature </span><span class="cov1" title="1">{
+                        c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_type", Message: "type must be \"bug\" or \"feature\""})
+                        return
+                }</span>
+                <span class="cov8" title="10">if strings.TrimSpace(req.Title) == "" || strings.TrimSpace(req.Body) == "" </span><span class="cov1" title="1">{
+                        c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: "title and body are required"})
+                        return
+                }</span>
+                <span class="cov8" title="9">if len(req.Title) &gt; constants.FeedbackTitleMaxLength </span><span class="cov1" title="1">{
+                        c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "title_too_long", Message: fmt.Sprintf("title exceeds %d characters", constants.FeedbackTitleMaxLength)})
+                        return
+                }</span>
+                <span class="cov8" title="8">if len(req.Body) &gt; constants.FeedbackBodyMaxLength </span><span class="cov1" title="1">{
+                        c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "body_too_long", Message: fmt.Sprintf("body exceeds %d characters", constants.FeedbackBodyMaxLength)})
+                        return
+                }</span>
+
+                <span class="cov7" title="7">if looksAutomated(req) </span><span class="cov3" title="2">{
+                        logging.Logger.Warn("Discarding feedback submission that failed bot-detection check")
+                        c.JSON(http.StatusOK, feedbackAcceptedResponse{Status: "accepted"})
+                        return
+                }</span>
+
+                <span class="cov6" title="5">body := issueBody(req)
+                labels := []string{constants.FeedbackSourceLabel, req.Type}
+                if err := issueCreator.CreateIssue(c.Request.Context(), req.Title, body, labels); err != nil </span><span class="cov1" title="1">{
+                        logging.Logger.Error("Failed to create GitHub issue from feedback submission", "error", err.Error())
+                        c.JSON(http.StatusBadGateway, apiv.ErrorVO{Error: "github_unavailable", Message: "failed to record feedback; please try again shortly"})
+                        return
+                }</span>
+
+                <span class="cov5" title="4">c.JSON(http.StatusOK, feedbackAcceptedResponse{Status: "accepted"})</span>
+        }
+}
+
+// looksAutomated reports whether a submission fails the bot-detection check: a populated
+// honeypot field (real users never see or fill it), or submission faster than
+// constants.FeedbackMinFillTime after the client-reported render time.
+func looksAutomated(req createFeedbackRequest) bool <span class="cov7" title="7">{
+        if req.Website != "" </span><span class="cov1" title="1">{
+                return true
+        }</span>
+        <span class="cov7" title="6">if req.RenderedAt != nil &amp;&amp; time.Since(*req.RenderedAt) &lt; constants.FeedbackMinFillTime </span><span class="cov1" title="1">{
+                return true
+        }</span>
+        <span class="cov6" title="5">return false</span>
+}
+
+// issueBody renders the submitted body plus any optional fields, appended only when present
+// per the "Submission without optional fields" scenario - no empty placeholders.
+func issueBody(req createFeedbackRequest) string <span class="cov6" title="5">{
+        var b strings.Builder
+        b.WriteString(req.Body)
+        if req.ReporterEmail != "" </span><span class="cov1" title="1">{
+                fmt.Fprintf(&amp;b, "\n\n---\nReporter email: %s", req.ReporterEmail)
+        }</span>
+        <span class="cov6" title="5">if req.Source != "" </span><span class="cov1" title="1">{
+                fmt.Fprintf(&amp;b, "\n\nSource: %s", req.Source)
+        }</span>
+        <span class="cov6" title="5">return b.String()</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package server
 
 import (
         "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/feedback"
         "github.com/sweetrpg/authz-client.go/authz"
 )
 
-func SetupHandlers(g *gin.Engine, authzClient *authz.Client) <span class="cov8" title="1">{
+func SetupHandlers(g *gin.Engine, authzClient *authz.Client, issueCreator feedback.IssueCreator, feedbackRateLimit gin.HandlerFunc) <span class="cov8" title="1">{
         setupBannerHandlers(g, authzClient)
         setupMaintenanceModeHandlers(g, authzClient)
         setupAppCardStatusHandlers(g, authzClient)
         setupStatusHandlers(g)
+        setupFeedbackHandlers(g, issueCreator, feedbackRateLimit)
 }</span>
 </pre>
 		
-		<pre class="file" id="file11" style="display: none">package server
+		<pre class="file" id="file14" style="display: none">package server
 
 import (
         "net/http"
@@ -3377,7 +3750,7 @@ func parseMaintenanceScope(raw string) (models.MaintenanceScopeType, string) <sp
 }
 </pre>
 		
-		<pre class="file" id="file12" style="display: none">// Package middleware provides Gin middleware for admin-api's route groups.
+		<pre class="file" id="file15" style="display: none">// Package middleware provides Gin middleware for admin-api's route groups.
 package middleware
 
 import (
@@ -3394,7 +3767,7 @@ func WriteAuth(client *authz.Client) gin.HandlerFunc <span class="cov10" title="
 }</span>
 </pre>
 		
-		<pre class="file" id="file13" style="display: none">package server
+		<pre class="file" id="file16" style="display: none">package server
 
 import (
         "net/http"
