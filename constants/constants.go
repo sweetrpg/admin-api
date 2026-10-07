@@ -1,5 +1,7 @@
 package constants
 
+import "time"
+
 // Environment variable names
 const (
 	HEALTH_TOKEN             = "HEALTH_TOKEN"
@@ -16,6 +18,16 @@ const (
 	// subject to its canonical users._id for write-path created_by/updated_by stamps. See
 	// canonical-user-ids-across-services in sweetrpg/platform.
 	USERS_API_URL = "USERS_API_URL"
+
+	// GITHUB_FEEDBACK_TOKEN authenticates the feedback package's GitHub Issues API calls.
+	// Scoped to Issues:write on sweetrpg/platform only - see design.md.
+	GITHUB_FEEDBACK_TOKEN = "GITHUB_FEEDBACK_TOKEN"
+
+	// RATE_LIMIT_FEEDBACK and RATE_LIMIT_FEEDBACK_WINDOW_SECONDS tune the feedback-specific
+	// rate-limit tier, stricter than api-core.go/ratelimit's standard tier. See
+	// feedback.RateLimitMiddleware.
+	RATE_LIMIT_FEEDBACK                = "RATE_LIMIT_FEEDBACK"
+	RATE_LIMIT_FEEDBACK_WINDOW_SECONDS = "RATE_LIMIT_FEEDBACK_WINDOW_SECONDS"
 )
 
 // Value constants
@@ -42,4 +54,26 @@ const (
 	// AdminActionAuditLogCollection is the MongoDB collection name for write-route
 	// audit records.
 	AdminActionAuditLogCollection = "admin_action_audit_logs"
+
+	// RateLimitFeedbackDefault and RateLimitFeedbackWindowDefault are the feedback tier's
+	// fallback budget when RATE_LIMIT_FEEDBACK[_WINDOW_SECONDS] aren't set: 5 submissions
+	// per 5 minutes per client, well under the platform-default standard tier (see
+	// design.md's "dedicated feedback-specific rate-limit tier" decision).
+	RateLimitFeedbackDefault       = 5
+	RateLimitFeedbackWindowDefault = 300
+
+	// FeedbackTitleMaxLength and FeedbackBodyMaxLength cap submitted text, rejected with a
+	// 400 when exceeded (see the anonymous-feedback-submission spec's "Oversized submission
+	// rejected" scenario).
+	FeedbackTitleMaxLength = 200
+	FeedbackBodyMaxLength  = 10000
+
+	// FeedbackMinFillTime is the minimum time between the form rendering (client-reported
+	// rendered_at) and submission for a human to plausibly have filled it out. Submissions
+	// faster than this are silently discarded - see design.md's honeypot/fill-time decision.
+	FeedbackMinFillTime = 3 * time.Second
+
+	// FeedbackSourceLabel is applied to every issue created from a feedback submission, so a
+	// spam wave can be bulk-filtered/closed without affecting other issues.
+	FeedbackSourceLabel = "source:in-app-feedback"
 )

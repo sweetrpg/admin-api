@@ -44,6 +44,8 @@ spec:
                       - secretRef:
                             name: api-misc
                       - secretRef:
+                            name: api-feedback
+                      - secretRef:
                             name: api-cache
                   env:
                       - name: GOMEMLIMIT
