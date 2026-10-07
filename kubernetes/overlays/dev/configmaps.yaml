@@ -26,3 +26,7 @@ data:
   # Backs the feedback endpoint's rate-limit counters.
   REDIS_HOST: cache.sweetrpg-admin.svc.cluster.local
   REDIS_PORT: "6379"
+  # main-web's feedback widget is the first browser-side (cross-origin) caller of this API -
+  # every prior consumer (main-web, catalog-web) fetches server-side, which setupCORS never
+  # gated. Without this, the Gin CORS middleware stays disabled entirely.
+  ALLOWED_ORIGINS: https://dev.sweetrpg.com
