@@ -516,6 +516,64 @@
                 }
             }
         },
+        "/feedback": {
+            "post": {
+                "description": "Accept an anonymous bug report or feature request and file it as a GitHub Issue on sweetrpg/platform, labeled source:in-app-feedback plus bug or feature. No GitHub credentials are ever requested from or exposed to the caller. Subject to a feedback-specific rate limit stricter than this service's default.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feedback"
+                ],
+                "summary": "Submit feedback",
+                "parameters": [
+                    {
+                        "description": "Feedback submission",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.createFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.feedbackAcceptedResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "missing/invalid type, title, or body, or title/body exceeds the length cap",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "429": {
+                        "description": "feedback-specific rate limit exceeded",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "502": {
+                        "description": "GitHub API call failed or timed out",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "503": {
+                        "description": "rate-limit backend unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
         "/maintenance-modes": {
             "get": {
                 "description": "Returns every maintenance-mode record (platform and every known service scope) regardless of enabled state, for admin-web's management view.",
@@ -1020,6 +1078,51 @@
                 },
                 "starts_at": {
                     "type": "string"
+                }
+            }
+        },
+        "server.createFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "body",
+                "title",
+                "type"
+            ],
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Searching for 9780786965601 returns zero results, even though the volume exists in the catalog."
+                },
+                "rendered_at": {
+                    "type": "string"
+                },
+                "reporter_email": {
+                    "type": "string",
+                    "example": "reporter@example.com"
+                },
+                "source": {
+                    "type": "string",
+                    "example": "catalog-web:/catalog/search"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Catalog search returns no results for exact ISBN match"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "bug"
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.feedbackAcceptedResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "accepted"
                 }
             }
         },

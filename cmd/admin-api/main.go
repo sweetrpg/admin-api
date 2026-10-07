@@ -14,6 +14,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gomodule/redigo/redis"
 	"github.com/grafana/pyroscope-go"
 	"github.com/joho/godotenv"
 	"github.com/penglongli/gin-metrics/ginmetrics"
@@ -24,6 +25,7 @@ import (
 	"github.com/sweetrpg/admin-api/authz"
 	"github.com/sweetrpg/admin-api/constants"
 	"github.com/sweetrpg/admin-api/docs"
+	"github.com/sweetrpg/admin-api/feedback"
 	"github.com/sweetrpg/admin-api/models"
 	"github.com/sweetrpg/admin-api/server"
 	apiconstants "github.com/sweetrpg/api-core.go/constants"
@@ -36,6 +38,10 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"golang.org/x/time/rate"
 )
+
+// redisConnectTimeout bounds the feedback rate limiter's Redis connection attempts so a
+// stalled connection fails fast instead of hanging past the caller's own timeout.
+const redisConnectTimeout = 5 * time.Second
 
 // @title Admin API service
 // @version 1.0
@@ -101,8 +107,14 @@ func main() {
 	// Add rate limiter
 	r.Use(RateLimiter())
 
+	redisPool := setupRedisPool()
+	if redisPool != nil {
+		defer func() { _ = redisPool.Close() }()
+	}
+
 	authzClient := authz.NewClient(util.GetEnv(constants.AUTH_API_URL, ""))
-	server.SetupHandlers(r, authzClient)
+	issueCreator := feedback.NewGitHubIssueClient(util.GetEnv(constants.GITHUB_FEEDBACK_TOKEN, ""))
+	server.SetupHandlers(r, authzClient, issueCreator, feedback.RateLimitMiddleware(redisPool))
 
 	_ = r.Run(util.GetEnv(apiconstants.BIND_ADDRESS, ":8000"))
 }
@@ -249,6 +261,38 @@ func setupMetrics(r *gin.Engine) {
 	m.SetSlowTime(10)
 	m.SetDuration([]float64{0.1, 0.3, 1.2, 5, 10})
 	m.Use(r)
+}
+
+// setupRedisPool builds a shared redigo connection pool for the feedback endpoint's dedicated
+// rate limiter, when REDIS_HOST is configured. Returns nil when no Redis is configured, in
+// which case feedback.RateLimitMiddleware fails closed (503) rather than running unlimited.
+func setupRedisPool() *redis.Pool {
+	redisHost, found := os.LookupEnv(apiconstants.REDIS_HOST)
+	if !found {
+		return nil
+	}
+
+	redisPort := util.GetEnv(apiconstants.REDIS_PORT, "6379")
+	redisPass := os.Getenv(apiconstants.REDIS_PASS)
+	addr := fmt.Sprintf("%s:%s", redisHost, redisPort)
+
+	return &redis.Pool{
+		MaxIdle:     5,
+		IdleTimeout: 240 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", addr, redis.DialConnectTimeout(redisConnectTimeout))
+			if err != nil {
+				return nil, err
+			}
+			if redisPass != "" {
+				if _, err := c.Do("AUTH", redisPass); err != nil {
+					_ = c.Close()
+					return nil, err
+				}
+			}
+			return c, nil
+		},
+	}
 }
 
 func RateLimiter() gin.HandlerFunc {
