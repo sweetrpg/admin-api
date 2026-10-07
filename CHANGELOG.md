@@ -1,4 +1,12 @@
 
+## 0.13.0 - 2026-10-07
+
+### Added
+- Add POST /feedback anonymous GitHub issue proxy
+- Wire feedback rate-limiter to Redis cache
+
+
+
 ## 0.12.0 - 2026-09-09
 
 ### Added
