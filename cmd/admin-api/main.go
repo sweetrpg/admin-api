@@ -21,6 +21,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/sweetrpg/admin-api/constants"
 	"github.com/sweetrpg/admin-api/docs"
+	"github.com/sweetrpg/admin-api/feedback"
 	"github.com/sweetrpg/admin-api/models"
 	"github.com/sweetrpg/admin-api/server"
 	apiconstants "github.com/sweetrpg/api-core.go/constants"
@@ -111,7 +112,8 @@ func main() {
 	r.Use(ratelimit.Middleware(redisPool, ratelimit.DefaultOptions()))
 
 	authzClient := authz.NewClient(util.GetEnv(constants.AUTH_API_URL, ""), util.GetEnv(constants.USERS_API_URL, ""))
-	server.SetupHandlers(r, authzClient)
+	issueCreator := feedback.NewGitHubIssueClient(util.GetEnv(constants.GITHUB_FEEDBACK_TOKEN, ""))
+	server.SetupHandlers(r, authzClient, issueCreator, feedback.RateLimitMiddleware(redisPool))
 
 	_ = r.Run(util.GetEnv(apiconstants.BIND_ADDRESS, ":8000"))
 }

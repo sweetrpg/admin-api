@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,12 @@ import (
 	"github.com/sweetrpg/authz-client.go/authz"
 	"github.com/sweetrpg/common.go/logging"
 )
+
+// noopIssueCreator is a stub feedback.IssueCreator for tests that don't exercise /feedback
+// itself but need a valid SetupHandlers call.
+type noopIssueCreator struct{}
+
+func (noopIssueCreator) CreateIssue(_ context.Context, _, _ string, _ []string) error { return nil }
 
 // TestWriteRoutesRequireAuth registers every route admin-api exposes (the
 // same SetupHandlers wiring main.go uses) and asserts every write route
@@ -29,7 +36,7 @@ func TestWriteRoutesRequireAuth(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(authz.CheckResponse{Allowed: true, Roles: []string{authz.RoleAdmin}, Sub: "auth0|user-sub"})
 	}))
 	t.Cleanup(authAPI.Close)
-	SetupHandlers(r, authz.NewClient(authAPI.URL, authAPI.URL))
+	SetupHandlers(r, authz.NewClient(authAPI.URL, authAPI.URL), noopIssueCreator{}, func(c *gin.Context) { c.Next() })
 
 	writeRoutes := []struct {
 		method string
