@@ -1,4 +1,11 @@
 
+## 0.13.1 - 2026-10-29
+
+### Fixed
+- Bump api-core.go to v0.4.0 and set explicit limits
+
+
+
 ## 0.13.0 - 2026-10-07
 
 ### Added
