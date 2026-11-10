@@ -1,0 +1,3854 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>admin-api: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/sweetrpg/admin-api/cmd/admin-api/main.go (0.0%)</option>
+				
+				<option value="file1">github.com/sweetrpg/admin-api/cmd/backfill-audit-fields/main.go (0.0%)</option>
+				
+				<option value="file2">github.com/sweetrpg/admin-api/cmd/backfill-canonical-user-ids/main.go (0.0%)</option>
+				
+				<option value="file3">github.com/sweetrpg/admin-api/docs/docs.go (0.0%)</option>
+				
+				<option value="file4">github.com/sweetrpg/admin-api/feedback/client.go (77.8%)</option>
+				
+				<option value="file5">github.com/sweetrpg/admin-api/feedback/ratelimit.go (0.0%)</option>
+				
+				<option value="file6">github.com/sweetrpg/admin-api/models/app_card_status.go (66.7%)</option>
+				
+				<option value="file7">github.com/sweetrpg/admin-api/models/audit.go (0.0%)</option>
+				
+				<option value="file8">github.com/sweetrpg/admin-api/models/banner.go (88.9%)</option>
+				
+				<option value="file9">github.com/sweetrpg/admin-api/models/maintenance_mode.go (85.7%)</option>
+				
+				<option value="file10">github.com/sweetrpg/admin-api/server/app_card_statuses.go (10.6%)</option>
+				
+				<option value="file11">github.com/sweetrpg/admin-api/server/banners.go (11.8%)</option>
+				
+				<option value="file12">github.com/sweetrpg/admin-api/server/feedback.go (100.0%)</option>
+				
+				<option value="file13">github.com/sweetrpg/admin-api/server/handlers.go (100.0%)</option>
+				
+				<option value="file14">github.com/sweetrpg/admin-api/server/maintenance_modes.go (15.2%)</option>
+				
+				<option value="file15">github.com/sweetrpg/admin-api/server/middleware/writeauth.go (100.0%)</option>
+				
+				<option value="file16">github.com/sweetrpg/admin-api/server/status.go (45.5%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "context"
+        "log"
+        "log/slog"
+        "os"
+        "strconv"
+        "strings"
+        "time"
+
+        "github.com/getsentry/sentry-go"
+        "github.com/gin-contrib/cors"
+        "github.com/gin-gonic/gin"
+        "github.com/grafana/pyroscope-go"
+        "github.com/joho/godotenv"
+        "github.com/penglongli/gin-metrics/ginmetrics"
+        "github.com/samber/slog-gin"
+        actuator "github.com/sinhashubham95/go-actuator"
+        swaggerfiles "github.com/swaggo/files"
+        ginSwagger "github.com/swaggo/gin-swagger"
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/admin-api/docs"
+        "github.com/sweetrpg/admin-api/feedback"
+        "github.com/sweetrpg/admin-api/models"
+        "github.com/sweetrpg/admin-api/server"
+        apiconstants "github.com/sweetrpg/api-core.go/constants"
+        "github.com/sweetrpg/api-core.go/featureflags"
+        "github.com/sweetrpg/api-core.go/ratelimit"
+        "github.com/sweetrpg/api-core.go/tracing"
+        apiutil "github.com/sweetrpg/api-core.go/util"
+        "github.com/sweetrpg/authz-client.go/authz"
+        "github.com/sweetrpg/common.go/logging"
+        "github.com/sweetrpg/common.go/util"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+)
+
+// @title Admin API service
+// @version 1.0
+// @description Swagger APIs
+// @termsOfService https://pilgrimagesoftware.com/terms/
+// @contact.name API Support
+// @contact.url https://sweetrpg.com
+// @contact.email admin@sweetrpg.com
+// @license.name MIT
+// @license.url https://mit-license.org/
+func main() <span class="cov0" title="0">{
+        _ = godotenv.Load(".env")
+
+        logging.Init()
+
+        setupSentry()
+
+        ff := featureflags.New(constants.ServiceName)
+
+        if stopProfiling := setupProfiling(ff); stopProfiling != nil </span><span class="cov0" title="0">{
+                defer stopProfiling()
+        }</span>
+
+        <span class="cov0" title="0">httpLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+        r := gin.New()
+        r.Use(sloggin.New(httpLogger))
+        r.Use(gin.Recovery())
+
+        setupTracing(r)
+        defer tracing.TeardownTracing()
+
+        // CORS
+        setupCORS(r)
+
+        checkWriteAuthConfig()
+
+        // Setup Prometheus metrics
+        setupMetrics(r)
+
+        database.SetupDatabase()
+        defer database.TeardownDatabase()
+
+        if err := models.EnsureIndexes(context.Background()); err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to ensure indexes", "error", err.Error())
+        }</span>
+        <span class="cov0" title="0">if err := models.EnsureAuditIndexes(context.Background()); err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to ensure audit indexes", "error", err.Error())
+        }</span>
+        <span class="cov0" title="0">if err := models.EnsureMaintenanceModeIndexes(context.Background()); err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to ensure maintenance-mode indexes", "error", err.Error())
+        }</span>
+        <span class="cov0" title="0">if err := models.EnsureAppCardStatusIndexes(context.Background()); err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to ensure app-card-status indexes", "error", err.Error())
+        }</span>
+
+        // Actuator
+        <span class="cov0" title="0">setupAcuator(r)
+
+        // Swagger
+        setupSwagger(r)
+
+        // Per-client/IP rate limiter (Redis-backed, fail-closed). Replaces the process-wide bucket.
+        redisPool := apiutil.RedisPool()
+        if redisPool != nil </span><span class="cov0" title="0">{
+                pingCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+                if err := ratelimit.Ping(pingCtx, redisPool); err != nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("REDIS_HOST is configured but unreachable at startup; rate-limited requests will fail closed until it recovers",
+                                "error", err.Error())
+                }</span>
+                <span class="cov0" title="0">cancel()</span>
+        } else<span class="cov0" title="0"> {
+                logging.Logger.Warn("REDIS_HOST is not configured; rate limiting will fail closed (503) on every limited request")
+        }</span>
+        <span class="cov0" title="0">r.Use(ratelimit.Middleware(redisPool, ratelimit.DefaultOptions()))
+
+        authzClient := authz.NewClient(util.GetEnv(constants.AUTH_API_URL, ""), util.GetEnv(constants.USERS_API_URL, ""))
+        issueCreator := feedback.NewGitHubIssueClient(util.GetEnv(constants.GITHUB_FEEDBACK_TOKEN, ""))
+        server.SetupHandlers(r, authzClient, issueCreator, feedback.RateLimitMiddleware(redisPool))
+
+        _ = r.Run(util.GetEnv(apiconstants.BIND_ADDRESS, ":8000"))</span>
+}
+
+func setupSwagger(r *gin.Engine) <span class="cov0" title="0">{
+        logging.Logger.Info("Setting up Swagger...")
+
+        docs.SwaggerInfo.Version = os.Getenv(apiconstants.VERSION)
+        docs.SwaggerInfo.Host = util.GetEnv(apiconstants.INGRESS_HOST, "localhost")
+        docs.SwaggerInfo.BasePath = util.GetEnv(apiconstants.INGRESS_BASE_PATH, "/")
+        docs.SwaggerInfo.Schemes = strings.Split(util.GetEnv(apiconstants.INGRESS_SCHEMES, "http"), ",")
+        // swagger middleware to serve the API docs
+        r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+}</span>
+
+func checkWriteAuthConfig() <span class="cov0" title="0">{
+        if util.GetEnv(constants.AUTH_API_URL, "") == "" </span><span class="cov0" title="0">{
+                logging.Logger.Warn("AUTH_API_URL not set, forwarded user bearer tokens cannot be verified for write routes")
+        }</span>
+}
+
+func setupCORS(r *gin.Engine) <span class="cov0" title="0">{
+        logging.Logger.Info("Setting up CORS...")
+
+        origins := util.GetEnv(constants.ALLOWED_ORIGINS, "")
+        if origins == "" </span><span class="cov0" title="0">{
+                logging.Logger.Warn("ALLOWED_ORIGINS not set, no cross-origin requests will be allowed")
+                return
+        }</span>
+
+        <span class="cov0" title="0">r.Use(cors.New(cors.Config{
+                AllowOrigins:     strings.Split(origins, ","),
+                AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+                AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+                AllowCredentials: true,
+                MaxAge:           12 * time.Hour,
+        }))</span>
+}
+
+func setupSentry() <span class="cov0" title="0">{
+        logging.Logger.Info("Setting up Sentry...")
+
+        sentryDsn, found := os.LookupEnv(apiconstants.SENTRY_DSN)
+        if found </span><span class="cov0" title="0">{
+                sentryDebug, _ := strconv.ParseBool(util.GetEnv(apiconstants.SENTRY_DEBUG, "false"))
+                err := sentry.Init(sentry.ClientOptions{
+                        Dsn:              sentryDsn,
+                        Debug:            sentryDebug,
+                        AttachStacktrace: true,
+                        EnableTracing:    true,
+                        TracesSampleRate: 1.0,
+                        TracesSampler: sentry.TracesSampler(func(ctx sentry.SamplingContext) float64 </span><span class="cov0" title="0">{
+                                if strings.Contains(ctx.Span.Name, "/status/") </span><span class="cov0" title="0">{
+                                        return 0.0
+                                }</span>
+                                <span class="cov0" title="0">return 1.0</span>
+                        }),
+                        ServerName: constants.ServiceName,
+                })
+                <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("Error while trying to initialize Sentry", "error", err.Error())
+                }</span>
+                <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{
+                        log.Print("Flushing Sentry...")
+                        sentry.Flush(2 * time.Second)
+                }</span>()
+        }
+}
+
+// setupProfiling starts continuous profiling only when the profiling-enabled
+// feature flag evaluates to true, regardless of whether
+// PYROSCOPE_SERVER_ADDRESS happens to be set - the flag is the on/off
+// control, PYROSCOPE_SERVER_ADDRESS is only the destination. See the
+// pyroscope-profiling-flag spec's three scenarios.
+func setupProfiling(ff *featureflags.Client) func() <span class="cov0" title="0">{
+        logging.Logger.Info("Setting up continuous profiling...")
+
+        if !ff.BoolFlag(context.Background(), constants.ProfilingEnabledFlag, false) </span><span class="cov0" title="0">{
+                logging.Logger.Info("profiling-enabled flag is off, continuous profiling disabled")
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">serverAddress, found := os.LookupEnv(constants.PYROSCOPE_SERVER_ADDRESS)
+        if !found </span><span class="cov0" title="0">{
+                logging.Logger.Warn("profiling-enabled flag is on but PYROSCOPE_SERVER_ADDRESS not set, continuous profiling disabled")
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">profiler, err := pyroscope.Start(pyroscope.Config{
+                ApplicationName: constants.ServiceName,
+                ServerAddress:   serverAddress,
+                TenantID:        util.GetEnv(constants.PYROSCOPE_TENANT_ID, ""),
+                Tags: map[string]string{
+                        "env": util.GetEnv(apiconstants.ENV, "dev"),
+                },
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Error while trying to initialize continuous profiling", "error", err.Error())
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">return func() </span><span class="cov0" title="0">{
+                _ = profiler.Stop()
+        }</span>
+}
+
+func setupAcuator(r *gin.Engine) <span class="cov0" title="0">{
+        logging.Logger.Info("Setting up actuator...")
+
+        actuatorHandler := actuator.GetActuatorHandler(&amp;actuator.Config{
+                Endpoints: []int{
+                        actuator.Env,
+                        actuator.Info,
+                        actuator.Metrics,
+                        actuator.Ping,
+                        actuator.ThreadDump,
+                },
+                Env:     util.GetEnv(apiconstants.ENV, "dev"),
+                Name:    constants.ServiceName,
+                Port:    util.GetEnvInt(apiconstants.PORT, 0),
+                Version: util.GetEnv(apiconstants.VERSION, "v0.0.0"),
+        })
+        ginActuatorHandler := func(ctx *gin.Context) </span><span class="cov0" title="0">{
+                actuatorHandler(ctx.Writer, ctx.Request)
+        }</span>
+        <span class="cov0" title="0">r.GET("/actuator/*endpoint", ginActuatorHandler)</span>
+}
+
+func setupTracing(r *gin.Engine) <span class="cov0" title="0">{
+        logging.Logger.Info("Setting up tracing...")
+
+        // Teardown is deferred by the caller (main), not here - deferring it in this function
+        // would run it as soon as this function returns, shutting down the tracer provider
+        // before the server ever serves a request, silently dropping every span.
+        tracing.SetupTracing(constants.ServiceName)
+        r.Use(otelgin.Middleware(constants.ServiceName))
+}</span>
+
+func setupMetrics(r *gin.Engine) <span class="cov0" title="0">{
+        logging.Logger.Info("Setting up metrics endpoint...")
+
+        m := ginmetrics.GetMonitor()
+        m.SetMetricPath("/metrics")
+        m.SetSlowTime(10)
+        m.SetDuration([]float64{0.1, 0.3, 1.2, 5, 10})
+        m.Use(r)
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">// Command backfill-audit-fields stamps the platform audit fields (PADR-0001) on admin-api's
+// pre-convention documents: updated_by on banners, and created_by / updated_by on
+// maintenance_modes. created_at / updated_at are already present on both. No acting user was
+// recorded historically, so a missing *_by is set to the "system" sentinel; on a banner an
+// existing created_by seeds updated_by instead.
+//
+// banners and maintenance_modes are hard-delete operational records (PADR-0027) - there is no
+// deleted_at / deleted_by pair to backfill.
+//
+// Idempotent - a document that already has updated_by is skipped. Dry run by default.
+//
+//        go run ./cmd/backfill-audit-fields          # report counts, write nothing
+//        go run ./cmd/backfill-audit-fields -apply   # perform the writes
+package main
+
+import (
+        "context"
+        "flag"
+
+        "github.com/joho/godotenv"
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/common.go/logging"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+)
+
+// systemActor is model-core's SystemActor value (PADR-0001). Inlined - admin-api has no
+// model-core.go dependency and this is the only place that needs the constant.
+const systemActor = "system"
+
+func main() <span class="cov0" title="0">{
+        apply := flag.Bool("apply", false, "perform writes (default: dry run)")
+        flag.Parse()
+
+        _ = godotenv.Load(".env")
+        logging.Init()
+
+        database.SetupDatabase()
+        defer database.TeardownDatabase()
+
+        ctx := context.Background()
+        mode := "DRY RUN"
+        if *apply </span><span class="cov0" title="0">{
+                mode = "APPLY"
+        }</span>
+
+        <span class="cov0" title="0">needsUpdatedBy := bson.D{{Key: "$or", Value: bson.A{
+                bson.D{{Key: "updated_by", Value: bson.D{{Key: "$exists", Value: false}}}},
+                bson.D{{Key: "updated_by", Value: ""}},
+        }}}
+
+        // banners: updated_by &lt;- created_by if set, else "system".
+        banners := stamp(ctx, constants.BannerCollection, needsUpdatedBy, *apply, func(d bson.Raw) bson.D </span><span class="cov0" title="0">{
+                by := systemActor
+                if s, ok := d.Lookup("created_by").StringValueOK(); ok &amp;&amp; s != "" </span><span class="cov0" title="0">{
+                        by = s
+                }</span>
+                <span class="cov0" title="0">return bson.D{{Key: "updated_by", Value: by}}</span>
+        })
+
+        // maintenance_modes: created_by / updated_by &lt;- "system" (no acting user recorded).
+        <span class="cov0" title="0">modes := stamp(ctx, constants.MaintenanceModeCollection, needsUpdatedBy, *apply, func(bson.Raw) bson.D </span><span class="cov0" title="0">{
+                return bson.D{
+                        {Key: "created_by", Value: systemActor},
+                        {Key: "updated_by", Value: systemActor},
+                }
+        }</span>)
+
+        <span class="cov0" title="0">logging.Logger.Info("backfill-audit-fields done", "mode", mode, "banners", banners, "maintenance_modes", modes)</span>
+}
+
+// stamp applies set(doc) to every doc in coll matching filter. Returns the count touched (or the
+// count that would be touched, on a dry run).
+func stamp(ctx context.Context, coll string, filter bson.D, apply bool, set func(bson.Raw) bson.D) int <span class="cov0" title="0">{
+        cur, err := database.Db.Collection(coll).Find(ctx, filter)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("query failed", "collection", coll, "error", err.Error())
+                return 0
+        }</span>
+        <span class="cov0" title="0">var docs []bson.Raw
+        if err := cur.All(ctx, &amp;docs); err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("cursor read failed", "collection", coll, "error", err.Error())
+                return 0
+        }</span>
+        <span class="cov0" title="0">n := 0
+        for _, d := range docs </span><span class="cov0" title="0">{
+                if !apply </span><span class="cov0" title="0">{
+                        n++
+                        continue</span>
+                }
+                <span class="cov0" title="0">if _, err := database.Db.Collection(coll).UpdateOne(ctx,
+                        bson.D{{Key: "_id", Value: d.Lookup("_id")}},
+                        bson.D{{Key: "$set", Value: set(d)}}); err != nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("update failed", "collection", coll, "error", err.Error())
+                        continue</span>
+                }
+                <span class="cov0" title="0">n++</span>
+        }
+        <span class="cov0" title="0">return n</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">// Command backfill-canonical-user-ids rewrites legacy Auth0-subject values in the
+// banners and maintenance_modes audit fields (created_by, updated_by) to the canonical
+// users._id each subject maps to, using users-api's internal resolve-subjects batch endpoint.
+// Subjects that cannot be resolved to a user become the "system" actor. Idempotent: values that
+// are already 24-hex canonical ids or "system" are skipped. Dry-run by default; pass -apply to
+// write. Run once after the admin-api release that adopts authz.Viewer.
+package main
+
+import (
+        "bytes"
+        "context"
+        "encoding/json"
+        "flag"
+        "fmt"
+        "net/http"
+        "os"
+        "regexp"
+        "time"
+
+        "github.com/joho/godotenv"
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/common.go/logging"
+        "github.com/sweetrpg/common.go/util"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+)
+
+type target struct {
+        collection string
+        field      string
+}
+
+var targets = []target{
+        {"banners", "created_by"},
+        {"banners", "updated_by"},
+        {"maintenance_modes", "created_by"},
+        {"maintenance_modes", "updated_by"},
+}
+
+var canonicalIDRE = regexp.MustCompile(`^[0-9a-f]{24}$`)
+
+type resolveSubjectsRequest struct {
+        Subjects []string `json:"subjects"`
+}
+
+func main() <span class="cov0" title="0">{
+        _ = godotenv.Load(".env")
+        logging.Init()
+
+        apply := flag.Bool("apply", false, "write changes; default is a dry run")
+        adminToken := flag.String("users-admin-token", os.Getenv("USERS_ADMIN_TOKEN"), "admin bearer token for users-api's internal resolve-subjects endpoint")
+        flag.Parse()
+
+        database.SetupDatabase()
+        defer database.TeardownDatabase()
+
+        ctx := context.Background()
+
+        usersBaseURL := util.GetEnv(constants.USERS_API_URL, "")
+
+        distinct := map[string]struct{}{}
+        for _, t := range targets </span><span class="cov0" title="0">{
+                coll := database.Db.Collection(t.collection)
+                values, err := coll.Distinct(ctx, t.field, bson.M{})
+                if err != nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("backfill: distinct failed", "collection", t.collection, "field", t.field, "error", err.Error())
+                        return
+                }</span>
+                <span class="cov0" title="0">for _, v := range values </span><span class="cov0" title="0">{
+                        s, ok := v.(string)
+                        if !ok || s == "" || s == "system" || canonicalIDRE.MatchString(s) </span><span class="cov0" title="0">{
+                                continue</span>
+                        }
+                        <span class="cov0" title="0">distinct[s] = struct{}{}</span>
+                }
+        }
+        <span class="cov0" title="0">if len(distinct) == 0 </span><span class="cov0" title="0">{
+                logging.Logger.Info("backfill: no subject-shaped values found to resolve")
+                return
+        }</span>
+        <span class="cov0" title="0">logging.Logger.Info("backfill: distinct subjects found", "count", len(distinct))
+
+        subjects := make([]string, 0, len(distinct))
+        for s := range distinct </span><span class="cov0" title="0">{
+                subjects = append(subjects, s)
+        }</span>
+
+        <span class="cov0" title="0">resolved := map[string]string{}
+        if *adminToken == "" </span><span class="cov0" title="0">{
+                logging.Logger.Warn("backfill: no users-admin-token set, skipping subject resolution", "dry_run", !*apply)
+        }</span> else<span class="cov0" title="0"> {
+                var err error
+                resolved, err = resolveSubjects(ctx, usersBaseURL, *adminToken, subjects)
+                if err != nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("backfill: resolve subjects failed", "error", err.Error())
+                        return
+                }</span>
+        }
+
+        <span class="cov0" title="0">rewritten := map[string]string{}
+        for _, s := range subjects </span><span class="cov0" title="0">{
+                if id := resolved[s]; id != "" </span><span class="cov0" title="0">{
+                        rewritten[s] = id
+                }</span> else<span class="cov0" title="0"> {
+                        logging.Logger.Warn("backfill: unmappable subject -&gt; system", "subject", s)
+                        rewritten[s] = "system"
+                }</span>
+        }
+
+        <span class="cov0" title="0">var updated int64
+        for _, t := range targets </span><span class="cov0" title="0">{
+                coll := database.Db.Collection(t.collection)
+                for oldValue, newValue := range rewritten </span><span class="cov0" title="0">{
+                        modifier := "would update"
+                        affected := int64(0)
+                        if *apply </span><span class="cov0" title="0">{
+                                res, err := coll.UpdateMany(ctx, bson.M{t.field: oldValue}, bson.D{{Key: "$set", Value: bson.D{{Key: t.field, Value: newValue}}}})
+                                if err != nil </span><span class="cov0" title="0">{
+                                        logging.Logger.Error("backfill: update failed", "collection", t.collection, "field", t.field, "value", oldValue, "error", err.Error())
+                                        return
+                                }</span>
+                                <span class="cov0" title="0">modifier = "updated"
+                                affected = res.ModifiedCount
+                                updated += affected</span>
+                        } else<span class="cov0" title="0"> {
+                                count, err := coll.CountDocuments(ctx, bson.M{t.field: oldValue})
+                                if err != nil </span><span class="cov0" title="0">{
+                                        logging.Logger.Error("backfill: count failed", "collection", t.collection, "field", t.field, "value", oldValue, "error", err.Error())
+                                        return
+                                }</span>
+                                <span class="cov0" title="0">affected = count</span>
+                        }
+                        <span class="cov0" title="0">if affected &gt; 0 </span><span class="cov0" title="0">{
+                                logging.Logger.Info("backfill: "+modifier, "collection", t.collection, "field", t.field, "value", oldValue, "replacement", newValue, "documents", affected)
+                        }</span>
+                }
+        }
+
+        <span class="cov0" title="0">if *apply </span><span class="cov0" title="0">{
+                logging.Logger.Info("backfill: complete", "documents_updated", updated)
+        }</span> else<span class="cov0" title="0"> {
+                fmt.Println("dry run complete - pass -apply to write changes; still remaining check via task 5.3")
+        }</span>
+}
+
+func resolveSubjects(ctx context.Context, usersBaseURL, token string, subjects []string) (map[string]string, error) <span class="cov0" title="0">{
+        if usersBaseURL == "" </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("USERS_API_URL is not set")
+        }</span>
+
+        <span class="cov0" title="0">body, err := json.Marshal(resolveSubjectsRequest{Subjects: subjects})
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">client := &amp;http.Client{Timeout: 60 * time.Second}
+        req, err := http.NewRequestWithContext(ctx, http.MethodPost, usersBaseURL+"/internal/resolve-subjects", bytes.NewReader(body))
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">req.Header.Set("Authorization", "Bearer "+token)
+        req.Header.Set("Content-Type", "application/json")
+
+        resp, err := client.Do(req)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{ _ = resp.Body.Close() }</span>()
+        <span class="cov0" title="0">if resp.StatusCode != http.StatusOK </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("resolve-subjects returned %s", resp.Status)
+        }</span>
+
+        <span class="cov0" title="0">out := map[string]string{}
+        if err := json.NewDecoder(resp.Body).Decode(&amp;out); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return out, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">// Package docs Code generated by swaggo/swag. DO NOT EDIT
+package docs
+
+import "github.com/swaggo/swag"
+
+const docTemplate = `{
+    "schemes": {{ marshal .Schemes }},
+    "swagger": "2.0",
+    "info": {
+        "description": "{{escape .Description}}",
+        "title": "{{.Title}}",
+        "termsOfService": "https://pilgrimagesoftware.com/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "https://sweetrpg.com",
+            "email": "admin@sweetrpg.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://mit-license.org/"
+        },
+        "version": "{{.Version}}"
+    },
+    "host": "{{.Host}}",
+    "basePath": "{{.BasePath}}",
+    "paths": {
+        "/app-card-statuses": {
+            "get": {
+                "description": "Returns every app-card-status record regardless of enabled state, for admin-web's management view.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "app-card-statuses"
+                ],
+                "summary": "List app-card-status records",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.AppCardStatus"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates an app-card-status record for the given service scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires a forwarded user bearer token carrying the admin role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "app-card-statuses"
+                ],
+                "summary": "Create or update an app-card-status record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "App card status record",
+                        "name": "app_card_status",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.appCardStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AppCardStatus"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.AppCardStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/app-card-statuses/active": {
+            "get": {
+                "description": "Returns enabled app-card-status records matching any of the requested service scopes. scope values look like \"service:catalog\".",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "app-card-statuses"
+                ],
+                "summary": "List active app-card-status records for a set of service scopes",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Repeated scope filter, e.g. scope=service:catalog\u0026scope=service:shelf",
+                        "name": "scope",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.AppCardStatus"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/app-card-statuses/{id}": {
+            "put": {
+                "description": "Replaces the mutable fields of an existing app-card-status record. Requires a forwarded user bearer token carrying the admin role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "app-card-statuses"
+                ],
+                "summary": "Update an app-card-status record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "App card status record ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated app card status record",
+                        "name": "app_card_status",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.appCardStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AppCardStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes an app-card-status record; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.",
+                "tags": [
+                    "app-card-statuses"
+                ],
+                "summary": "Delete an app-card-status record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "App card status record ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {}
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/banners": {
+            "get": {
+                "description": "Default mode returns active (started, not expired) banners matching any of the requested scopes, most-severe-first; platform-scoped banners are always included. scope values look like \"platform\", \"service:catalog\", or \"page:/catalog/browse\". Pass include_inactive=true (admin-web's management view) to instead return every banner regardless of scope or expiration - scope params are ignored in that mode.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "banners"
+                ],
+                "summary": "List banners",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Repeated scope filter, e.g. scope=platform\u0026scope=service:catalog - required unless include_inactive=true",
+                        "name": "scope",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Return every banner (any scope, expired or scheduled included) for admin management views",
+                        "name": "include_inactive",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.BannerMessage"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires a forwarded user bearer token carrying the admin role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "banners"
+                ],
+                "summary": "Create a banner message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Banner message",
+                        "name": "banner",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.createBannerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.BannerMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/banners/{id}": {
+            "put": {
+                "description": "Replaces the mutable fields of an existing banner message. expires_at is required. Requires a forwarded user bearer token carrying the admin role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "banners"
+                ],
+                "summary": "Update a banner message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Banner ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated banner message",
+                        "name": "banner",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.updateBannerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.BannerMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a banner message; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.",
+                "tags": [
+                    "banners"
+                ],
+                "summary": "Delete a banner message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Banner ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {}
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/feedback": {
+            "post": {
+                "description": "Accept an anonymous bug report or feature request and file it as a GitHub Issue on sweetrpg/platform, labeled source:in-app-feedback plus bug or feature. No GitHub credentials are ever requested from or exposed to the caller. Subject to a feedback-specific rate limit stricter than this service's default.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feedback"
+                ],
+                "summary": "Submit feedback",
+                "parameters": [
+                    {
+                        "description": "Feedback submission",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.createFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.feedbackAcceptedResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "missing/invalid type, title, or body, or title/body exceeds the length cap",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "429": {
+                        "description": "feedback-specific rate limit exceeded",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "502": {
+                        "description": "GitHub API call failed or timed out",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "503": {
+                        "description": "rate-limit backend unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/maintenance-modes": {
+            "get": {
+                "description": "Returns every maintenance-mode record (platform and every known service scope) regardless of enabled state, for admin-web's management view.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "List maintenance-mode records",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.MaintenanceMode"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a maintenance-mode record for the given scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires a forwarded user bearer token carrying the admin role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "Create or update a maintenance-mode record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Maintenance-mode record",
+                        "name": "maintenance_mode",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.maintenanceModeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MaintenanceMode"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.MaintenanceMode"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/maintenance-modes/active": {
+            "get": {
+                "description": "Returns enabled maintenance-mode records matching any of the requested scopes; platform-scoped records are always included. scope values look like \"platform\" or \"service:catalog\".",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "List active maintenance-mode records for a set of scopes",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Repeated scope filter, e.g. scope=platform\u0026scope=service:catalog",
+                        "name": "scope",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.MaintenanceMode"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/maintenance-modes/{id}": {
+            "put": {
+                "description": "Replaces the mutable fields of an existing maintenance-mode record. Requires a forwarded user bearer token carrying the admin role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "Update a maintenance-mode record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Maintenance-mode record ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated maintenance-mode record",
+                        "name": "maintenance_mode",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.maintenanceModeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MaintenanceMode"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a maintenance-mode record; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.",
+                "tags": [
+                    "maintenance-modes"
+                ],
+                "summary": "Delete a maintenance-mode record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer user access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Maintenance-mode record ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {}
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/vo.ErrorVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/status/health": {
+            "get": {
+                "description": "Health check",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "status"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vo.HealthResponseVO"
+                        }
+                    }
+                }
+            }
+        },
+        "/status/ping": {
+            "get": {
+                "description": "Ping",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "status"
+                ],
+                "summary": "Ping",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vo.PingResponseVO"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.AppCardStatus": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "scope_type": {
+                    "$ref": "#/definitions/models.AppCardStatusScopeType"
+                },
+                "scope_value": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.AppCardStatusScopeType": {
+            "type": "string",
+            "enum": [
+                "service"
+            ],
+            "x-enum-varnames": [
+                "AppCardStatusScopeService"
+            ]
+        },
+        "models.BannerMessage": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "description": "Platform audit fields (PADR-0001); hard-delete record (PADR-0027), no deleted_* pair.",
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "scope_type": {
+                    "$ref": "#/definitions/models.ScopeType"
+                },
+                "scope_value": {
+                    "type": "string"
+                },
+                "severity": {
+                    "$ref": "#/definitions/models.Severity"
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MaintenanceMode": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "description": "Platform audit fields (PADR-0001); hard-delete record (PADR-0027), no deleted_* pair.",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "scope_type": {
+                    "$ref": "#/definitions/models.MaintenanceScopeType"
+                },
+                "scope_value": {
+                    "type": "string"
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MaintenanceScopeType": {
+            "type": "string",
+            "enum": [
+                "platform",
+                "service"
+            ],
+            "x-enum-varnames": [
+                "MaintenanceScopePlatform",
+                "MaintenanceScopeService"
+            ]
+        },
+        "models.ScopeType": {
+            "type": "string",
+            "enum": [
+                "platform",
+                "service",
+                "page"
+            ],
+            "x-enum-varnames": [
+                "ScopePlatform",
+                "ScopeService",
+                "ScopePage"
+            ]
+        },
+        "models.Severity": {
+            "type": "string",
+            "enum": [
+                "info",
+                "warning",
+                "critical"
+            ],
+            "x-enum-varnames": [
+                "SeverityInfo",
+                "SeverityWarning",
+                "SeverityCritical"
+            ]
+        },
+        "server.appCardStatusRequest": {
+            "type": "object",
+            "required": [
+                "label",
+                "scope_value"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "scope_value": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.createBannerRequest": {
+            "type": "object",
+            "required": [
+                "expires_at",
+                "message",
+                "scope_type",
+                "severity"
+            ],
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "scope_type": {
+                    "$ref": "#/definitions/models.ScopeType"
+                },
+                "scope_value": {
+                    "type": "string"
+                },
+                "severity": {
+                    "$ref": "#/definitions/models.Severity"
+                },
+                "starts_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.createFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "body",
+                "title",
+                "type"
+            ],
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Searching for 9780786965601 returns zero results, even though the volume exists in the catalog."
+                },
+                "rendered_at": {
+                    "type": "string"
+                },
+                "reporter_email": {
+                    "type": "string",
+                    "example": "reporter@example.com"
+                },
+                "source": {
+                    "type": "string",
+                    "example": "catalog-web:/catalog/search"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Catalog search returns no results for exact ISBN match"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "bug"
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.feedbackAcceptedResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "accepted"
+                }
+            }
+        },
+        "server.maintenanceModeRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "label",
+                "scope_type",
+                "starts_at"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "scope_type": {
+                    "$ref": "#/definitions/models.MaintenanceScopeType"
+                },
+                "scope_value": {
+                    "type": "string"
+                },
+                "starts_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.updateBannerRequest": {
+            "type": "object",
+            "required": [
+                "expires_at",
+                "message",
+                "scope_type",
+                "severity"
+            ],
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "scope_type": {
+                    "$ref": "#/definitions/models.ScopeType"
+                },
+                "scope_value": {
+                    "type": "string"
+                },
+                "severity": {
+                    "$ref": "#/definitions/models.Severity"
+                },
+                "starts_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "vo.ErrorVO": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "vo.HealthResponseVO": {
+            "type": "object",
+            "properties": {
+                "collections": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "database": {
+                    "type": "string"
+                },
+                "errors": {
+                    "type": "integer"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "ping": {
+                    "type": "string"
+                }
+            }
+        },
+        "vo.PingResponseVO": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "hostname": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}`
+
+// SwaggerInfo holds exported Swagger Info so clients can modify it
+var SwaggerInfo = &amp;swag.Spec{
+        Version:          "1.0",
+        Host:             "",
+        BasePath:         "",
+        Schemes:          []string{},
+        Title:            "Admin API service",
+        Description:      "Swagger APIs",
+        InfoInstanceName: "swagger",
+        SwaggerTemplate:  docTemplate,
+        LeftDelim:        "{{",
+        RightDelim:       "}}",
+}
+
+func init() <span class="cov0" title="0">{
+        swag.Register(SwaggerInfo.InstanceName(), SwaggerInfo)
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">// Package feedback implements the anonymous-feedback-to-GitHub-Issue proxy: a single
+// IssueCreator interface backed by the GitHub Issues API, kept separate from the HTTP handler
+// in server/feedback.go so the handler can be unit-tested against a fake creator.
+package feedback
+
+import (
+        "context"
+        "fmt"
+        "net/http"
+        "time"
+
+        "github.com/google/go-github/v76/github"
+)
+
+// Owner and Repo identify the sweetrpg/platform meta-repo that every feedback submission
+// becomes an issue on - see design.md's "no per-service repo routing" decision.
+const (
+        Owner = "sweetrpg"
+        Repo  = "platform"
+
+        // createIssueTimeout bounds the GitHub API call so a stalled connection fails fast and
+        // the caller gets a prompt 502 rather than hanging past their own timeout.
+        createIssueTimeout = 10 * time.Second
+)
+
+// IssueCreator creates a GitHub Issue from a feedback submission. Implemented by
+// GitHubIssueClient; tests substitute a fake.
+type IssueCreator interface {
+        CreateIssue(ctx context.Context, title, body string, labels []string) error
+}
+
+// GitHubIssueClient creates issues on sweetrpg/platform via the GitHub REST API using a
+// service-owned token scoped to Issues:write on that one repo (see design.md).
+type GitHubIssueClient struct {
+        client *github.Client
+}
+
+// NewGitHubIssueClient builds a client authenticated with the given token.
+func NewGitHubIssueClient(token string) *GitHubIssueClient <span class="cov0" title="0">{
+        return &amp;GitHubIssueClient{client: github.NewClient(nil).WithAuthToken(token)}
+}</span>
+
+// CreateIssue creates a labeled issue on sweetrpg/platform. A non-nil error means the caller
+// should treat the submission as failed (502/503) - this never retries internally, per
+// design.md's "no partial state to reconcile" decision.
+func (c *GitHubIssueClient) CreateIssue(ctx context.Context, title, body string, labels []string) error <span class="cov10" title="2">{
+        ctx, cancel := context.WithTimeout(ctx, createIssueTimeout)
+        defer cancel()
+
+        _, resp, err := c.client.Issues.Create(ctx, Owner, Repo, &amp;github.IssueRequest{
+                Title:  &amp;title,
+                Body:   &amp;body,
+                Labels: &amp;labels,
+        })
+        if err != nil </span><span class="cov1" title="1">{
+                return fmt.Errorf("feedback: create github issue: %w", err)
+        }</span>
+        <span class="cov1" title="1">if resp.StatusCode != http.StatusCreated </span><span class="cov0" title="0">{
+                return fmt.Errorf("feedback: create github issue: unexpected status %d", resp.StatusCode)
+        }</span>
+        <span class="cov1" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package feedback
+
+import (
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+        "github.com/gomodule/redigo/redis"
+        "github.com/sweetrpg/admin-api/constants"
+        apicoreconstants "github.com/sweetrpg/api-core.go/constants"
+        "github.com/sweetrpg/api-core.go/ratelimit"
+        "github.com/sweetrpg/api-core.go/util"
+        apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/common.go/logging"
+)
+
+// tierFeedback is this route's own rate-limit tier name, kept separate from
+// api-core.go/ratelimit's cheap/standard tiers so it doesn't change the budget for any other
+// admin-api route (see design.md's "dedicated feedback-specific rate-limit tier" decision).
+const tierFeedback = "feedback"
+
+// RateLimitMiddleware enforces a per-client budget on just the route it's mounted on, stricter
+// than and layered on top of admin-api's existing service-wide limiter. Fails closed (503) if
+// pool is nil or Redis is unreachable, matching api-core.go/ratelimit.Middleware's behavior.
+func RateLimitMiddleware(pool *redis.Pool) gin.HandlerFunc <span class="cov0" title="0">{
+        limiter := ratelimit.New(pool, map[string]ratelimit.Tier{
+                tierFeedback: {
+                        Limit:  util.GetEnvInt(constants.RATE_LIMIT_FEEDBACK, constants.RateLimitFeedbackDefault),
+                        Window: util.GetEnvInt(constants.RATE_LIMIT_FEEDBACK_WINDOW_SECONDS, constants.RateLimitFeedbackWindowDefault),
+                },
+        })
+
+        return func(c *gin.Context) </span><span class="cov0" title="0">{
+                if pool == nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("Feedback rate-limit store not configured; rejecting request (fail closed)")
+                        c.AbortWithStatusJSON(http.StatusServiceUnavailable, apiv.ErrorVO{
+                                Error:   apicoreconstants.ErrorRateLimitUnavailable,
+                                Message: "Rate limiting is temporarily unavailable",
+                        })
+                        return
+                }</span>
+
+                <span class="cov0" title="0">clientKey := ratelimit.ClientKey(c)
+                allowed, err := limiter.Allow(c.Request.Context(), clientKey, tierFeedback)
+                if err != nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("Feedback rate-limit backend unreachable; rejecting request (fail closed)", "error", err.Error())
+                        c.AbortWithStatusJSON(http.StatusServiceUnavailable, apiv.ErrorVO{
+                                Error:   apicoreconstants.ErrorRateLimitUnavailable,
+                                Message: "Rate limiting is temporarily unavailable",
+                        })
+                        return
+                }</span>
+                <span class="cov0" title="0">if !allowed </span><span class="cov0" title="0">{
+                        logging.Logger.Warn("Feedback rate limit exceeded", "client", clientKey)
+                        c.AbortWithStatusJSON(http.StatusTooManyRequests, apiv.ErrorVO{
+                                Error:   apicoreconstants.ErrorRateLimited,
+                                Message: "Limit exceeded",
+                        })
+                        return
+                }</span>
+                <span class="cov0" title="0">c.Next()</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package models
+
+import (
+        "context"
+        "errors"
+        "time"
+        "unicode/utf8"
+
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/bson/primitive"
+        "go.mongodb.org/mongo-driver/mongo"
+        "go.mongodb.org/mongo-driver/mongo/options"
+)
+
+// AppCardStatusScopeType identifies what an app-card-status record applies to.
+type AppCardStatusScopeType string
+
+const (
+        AppCardStatusScopeService AppCardStatusScopeType = "service"
+)
+
+func (s AppCardStatusScopeType) valid() bool <span class="cov10" title="8">{
+        switch s </span>{
+        case AppCardStatusScopeService:<span class="cov10" title="8">
+                return true</span>
+        default:<span class="cov0" title="0">
+                return false</span>
+        }
+}
+
+// AppCardStatus is the MongoDB document for a service-scoped app card status.
+// It controls the enabled/disabled state and display label for a service's app card.
+type AppCardStatus struct {
+        ID         primitive.ObjectID     `bson:"_id,omitempty" json:"id"`
+        ScopeType  AppCardStatusScopeType `bson:"scope_type" json:"scope_type"`
+        ScopeValue string                 `bson:"scope_value" json:"scope_value"`
+        Enabled    bool                   `bson:"enabled" json:"enabled"`
+        Label      string                 `bson:"label" json:"label"`
+        // Platform audit fields (PADR-0001); hard-delete record (PADR-0027), no deleted_* pair.
+        CreatedBy string    `bson:"created_by" json:"created_by"`
+        CreatedAt time.Time `bson:"created_at" json:"created_at"`
+        UpdatedBy string    `bson:"updated_by" json:"updated_by"`
+        UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+}
+
+// Validate checks that the record satisfies the invariants required by the spec:
+// scope_value must not be empty, label must not be empty and must not exceed 24 runes.
+func (a *AppCardStatus) Validate() error <span class="cov10" title="8">{
+        if !a.ScopeType.valid() </span><span class="cov0" title="0">{
+                return errors.New("scope_type must be service")
+        }</span>
+        <span class="cov10" title="8">if a.ScopeValue == "" </span><span class="cov1" title="1">{
+                return errors.New("scope_value is required")
+        }</span>
+        <span class="cov9" title="7">if a.Label == "" </span><span class="cov1" title="1">{
+                return errors.New("label is required")
+        }</span>
+        <span class="cov8" title="6">if utf8.RuneCountInString(a.Label) &gt; 24 </span><span class="cov4" title="2">{
+                return errors.New("label must not exceed 24 characters")
+        }</span>
+        <span class="cov7" title="4">return nil</span>
+}
+
+// EnsureAppCardStatusIndexes creates a unique compound index on (scope_type,
+// scope_value) so at most one record exists per scope. Safe to call on every
+// startup - CreateOne is idempotent for an identical index definition.
+func EnsureAppCardStatusIndexes(ctx context.Context) error <span class="cov0" title="0">{
+        collection := database.Db.Collection(constants.AppCardStatusCollection)
+
+        _, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+                Keys:    bson.D{{Key: "scope_type", Value: 1}, {Key: "scope_value", Value: 1}},
+                Options: options.Index().SetUnique(true),
+        })
+        return err
+}</span>
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package models
+
+import (
+        "context"
+        "time"
+
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/mongo"
+        "go.mongodb.org/mongo-driver/mongo/options"
+
+        "go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+// AuditStatus tracks whether the mutation an AdminActionAuditLog record
+// covers actually completed.
+type AuditStatus string
+
+const (
+        AuditAttempted AuditStatus = "attempted"
+        AuditSucceeded AuditStatus = "succeeded"
+        AuditFailed    AuditStatus = "failed"
+)
+
+// AdminActionAuditLog attributes a write-route mutation to the acting user
+// who made it. Written *before* the mutation is attempted (status
+// "attempted") and updated *after* it completes - see RecordAuditAttempt and
+// CompleteAudit. If the "before" write fails, the mutation must not be
+// performed: an audit trail that can silently fail to exist is not an audit
+// trail, mirroring users-api's AdminActionAuditLog/performAudited pattern.
+// bson tags on every field but ID/Status use omitempty: database.Update
+// replaces the stored document with a $set of every marshaled field of
+// whatever doc it's given, so CompleteAudit - which only ever populates
+// Status/CompletedAt/ErrorMessage on top of an existing record's ID - must
+// not marshal its unset fields as empty values, or it would overwrite the
+// original ActingUserId/Action/AttemptedAt with blanks.
+type AdminActionAuditLog struct {
+        ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+        ActingUserId string             `bson:"acting_user_id,omitempty" json:"acting_user_id"`
+        Action       string             `bson:"action,omitempty" json:"action"`
+        ResourceID   string             `bson:"resource_id,omitempty" json:"resource_id,omitempty"`
+        Detail       string             `bson:"detail,omitempty" json:"detail,omitempty"`
+        Status       AuditStatus        `bson:"status" json:"status"`
+        AttemptedAt  time.Time          `bson:"attempted_at,omitempty" json:"attempted_at"`
+        CompletedAt  *time.Time         `bson:"completed_at,omitempty" json:"completed_at,omitempty"`
+        ErrorMessage string             `bson:"error_message,omitempty" json:"error_message,omitempty"`
+}
+
+// RecordAuditAttempt writes the "attempted" audit record for a write-route
+// mutation before the mutation itself runs. Returns the record's ID for a
+// later CompleteAudit call. Callers must not perform the mutation if this
+// returns an error.
+func RecordAuditAttempt(actingUserId, action, resourceID, detail string) (primitive.ObjectID, error) <span class="cov0" title="0">{
+        entry := &amp;AdminActionAuditLog{
+                ActingUserId: actingUserId,
+                Action:       action,
+                ResourceID:   resourceID,
+                Detail:       detail,
+                Status:       AuditAttempted,
+                AttemptedAt:  time.Now().UTC(),
+        }
+        return database.Insert(constants.AdminActionAuditLogCollection, entry)
+}</span>
+
+// CompleteAudit updates an audit record to its final status after the
+// mutation it covers has run. Best-effort: a failure here doesn't undo a
+// mutation that already happened, so callers should log a warning rather
+// than fail the request on error.
+func CompleteAudit(id primitive.ObjectID, status AuditStatus, errMessage string) error <span class="cov0" title="0">{
+        now := time.Now().UTC()
+        update := &amp;AdminActionAuditLog{
+                ID:           id,
+                Status:       status,
+                CompletedAt:  &amp;now,
+                ErrorMessage: errMessage,
+        }
+        _, _, err := database.Update(constants.AdminActionAuditLogCollection, id, update)
+        return err
+}</span>
+
+// EnsureAuditIndexes creates the TTL index on admin_action_audit_logs: audit
+// records are retained for 1 year (longer than banners' expiry-driven TTL -
+// see design.md's Open Questions), independent of any per-document field.
+// Safe to call on every startup - CreateOne is idempotent for an identical
+// index definition.
+func EnsureAuditIndexes(ctx context.Context) error <span class="cov0" title="0">{
+        collection := database.Db.Collection(constants.AdminActionAuditLogCollection)
+
+        _, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+                Keys:    bson.D{{Key: "attempted_at", Value: 1}},
+                Options: options.Index().SetExpireAfterSeconds(365 * 24 * 60 * 60),
+        })
+        return err
+}</span>
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">// Package models defines the persisted document shapes for admin-api.
+package models
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/bson/primitive"
+        "go.mongodb.org/mongo-driver/mongo"
+        "go.mongodb.org/mongo-driver/mongo/options"
+)
+
+// ScopeType identifies what a banner message applies to.
+type ScopeType string
+
+const (
+        ScopePlatform ScopeType = "platform"
+        ScopeService  ScopeType = "service"
+        ScopePage     ScopeType = "page"
+)
+
+// Severity ranks how urgent a banner message is.
+type Severity string
+
+const (
+        SeverityInfo     Severity = "info"
+        SeverityWarning  Severity = "warning"
+        SeverityCritical Severity = "critical"
+)
+
+// severityRank orders severities most-severe-first; lower ranks first.
+var severityRank = map[Severity]int{
+        SeverityCritical: 0,
+        SeverityWarning:  1,
+        SeverityInfo:     2,
+}
+
+// Rank returns the sort-order weight for this severity (0 = most severe).
+// Unknown severities sort last.
+func (s Severity) Rank() int <span class="cov8" title="6">{
+        if r, ok := severityRank[s]; ok </span><span class="cov7" title="5">{
+                return r
+        }</span>
+        <span class="cov1" title="1">return len(severityRank)</span>
+}
+
+func (s ScopeType) valid() bool <span class="cov10" title="9">{
+        switch s </span>{
+        case ScopePlatform, ScopeService, ScopePage:<span class="cov9" title="8">
+                return true</span>
+        default:<span class="cov1" title="1">
+                return false</span>
+        }
+}
+
+func (s Severity) valid() bool <span class="cov8" title="6">{
+        switch s </span>{
+        case SeverityInfo, SeverityWarning, SeverityCritical:<span class="cov7" title="5">
+                return true</span>
+        default:<span class="cov1" title="1">
+                return false</span>
+        }
+}
+
+// BannerMessage is the MongoDB document for a platform-wide, service-scoped, or
+// page-scoped admin banner.
+type BannerMessage struct {
+        ID         primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+        ScopeType  ScopeType          `bson:"scope_type" json:"scope_type"`
+        ScopeValue string             `bson:"scope_value" json:"scope_value"`
+        Severity   Severity           `bson:"severity" json:"severity"`
+        Message    string             `bson:"message" json:"message"`
+        StartsAt   *time.Time         `bson:"starts_at,omitempty" json:"starts_at,omitempty"`
+        ExpiresAt  time.Time          `bson:"expires_at" json:"expires_at"`
+        // Platform audit fields (PADR-0001); hard-delete record (PADR-0027), no deleted_* pair.
+        CreatedBy string    `bson:"created_by" json:"created_by"`
+        CreatedAt time.Time `bson:"created_at" json:"created_at"`
+        UpdatedBy string    `bson:"updated_by" json:"updated_by"`
+        UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+}
+
+// Validate checks that the banner satisfies the invariants required by the spec:
+// a known scope type, a scope value present exactly when the scope requires one, a
+// known severity, a non-empty message, and a required expires_at.
+func (b *BannerMessage) Validate() error <span class="cov10" title="9">{
+        if !b.ScopeType.valid() </span><span class="cov1" title="1">{
+                return errors.New("scope_type must be one of: platform, service, page")
+        }</span>
+        <span class="cov9" title="8">if b.ScopeType == ScopePlatform &amp;&amp; b.ScopeValue != "" </span><span class="cov1" title="1">{
+                return errors.New("scope_value must be empty for platform scope")
+        }</span>
+        <span class="cov8" title="7">if b.ScopeType != ScopePlatform &amp;&amp; b.ScopeValue == "" </span><span class="cov1" title="1">{
+                return errors.New("scope_value is required for service and page scope")
+        }</span>
+        <span class="cov8" title="6">if !b.Severity.valid() </span><span class="cov1" title="1">{
+                return errors.New("severity must be one of: info, warning, critical")
+        }</span>
+        <span class="cov7" title="5">if b.Message == "" </span><span class="cov1" title="1">{
+                return errors.New("message is required")
+        }</span>
+        <span class="cov6" title="4">if b.ExpiresAt.IsZero() </span><span class="cov1" title="1">{
+                return errors.New("expires_at is required")
+        }</span>
+        <span class="cov5" title="3">if b.StartsAt != nil &amp;&amp; b.StartsAt.After(b.ExpiresAt) </span><span class="cov1" title="1">{
+                return errors.New("starts_at must be before expires_at")
+        }</span>
+        <span class="cov3" title="2">return nil</span>
+}
+
+// EnsureIndexes creates the indexes admin-api relies on: a MongoDB TTL index on
+// expires_at that physically removes expired documents, and a compound index on
+// (scope_type, scope_value) to keep the scoped-query path fast. Safe to call on every
+// startup - CreateOne is idempotent for an identical index definition.
+func EnsureIndexes(ctx context.Context) error <span class="cov0" title="0">{
+        collection := database.Db.Collection(constants.BannerCollection)
+
+        _, err := collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
+                {
+                        Keys:    bson.D{{Key: "expires_at", Value: 1}},
+                        Options: options.Index().SetExpireAfterSeconds(0),
+                },
+                {
+                        Keys: bson.D{{Key: "scope_type", Value: 1}, {Key: "scope_value", Value: 1}},
+                },
+        })
+        return err
+}</span>
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package models
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/bson/primitive"
+        "go.mongodb.org/mongo-driver/mongo"
+        "go.mongodb.org/mongo-driver/mongo/options"
+)
+
+// MaintenanceScopeType identifies what a maintenance-mode record applies to. Unlike
+// BannerMessage's ScopeType, maintenance mode has no page scope - it's app/platform
+// granularity only.
+type MaintenanceScopeType string
+
+const (
+        MaintenanceScopePlatform MaintenanceScopeType = "platform"
+        MaintenanceScopeService  MaintenanceScopeType = "service"
+)
+
+func (s MaintenanceScopeType) valid() bool <span class="cov10" title="10">{
+        switch s </span>{
+        case MaintenanceScopePlatform, MaintenanceScopeService:<span class="cov9" title="9">
+                return true</span>
+        default:<span class="cov1" title="1">
+                return false</span>
+        }
+}
+
+// MaintenanceMode is the MongoDB document for a platform-wide or service-scoped
+// maintenance state. Unlike BannerMessage, it's a durable on/off record - one per
+// scope, edited in place rather than accumulated - with enabled as the explicit gate;
+// starts_at/ends_at are informational for display only.
+type MaintenanceMode struct {
+        ID          primitive.ObjectID   `bson:"_id,omitempty" json:"id"`
+        ScopeType   MaintenanceScopeType `bson:"scope_type" json:"scope_type"`
+        ScopeValue  string               `bson:"scope_value" json:"scope_value"`
+        Enabled     bool                 `bson:"enabled" json:"enabled"`
+        StartsAt    time.Time            `bson:"starts_at" json:"starts_at"`
+        EndsAt      *time.Time           `bson:"ends_at,omitempty" json:"ends_at,omitempty"`
+        Label       string               `bson:"label" json:"label"`
+        Description string               `bson:"description" json:"description"`
+        // Platform audit fields (PADR-0001); hard-delete record (PADR-0027), no deleted_* pair.
+        CreatedBy string    `bson:"created_by" json:"created_by"`
+        CreatedAt time.Time `bson:"created_at" json:"created_at"`
+        UpdatedBy string    `bson:"updated_by" json:"updated_by"`
+        UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+}
+
+// Validate checks that the record satisfies the invariants required by the spec: a
+// known scope type, a scope value present exactly when the scope requires one, a
+// required starts_at, and required label/description.
+func (m *MaintenanceMode) Validate() error <span class="cov10" title="10">{
+        if !m.ScopeType.valid() </span><span class="cov1" title="1">{
+                return errors.New("scope_type must be one of: platform, service")
+        }</span>
+        <span class="cov9" title="9">if m.ScopeType == MaintenanceScopePlatform &amp;&amp; m.ScopeValue != "" </span><span class="cov1" title="1">{
+                return errors.New("scope_value must be empty for platform scope")
+        }</span>
+        <span class="cov9" title="8">if m.ScopeType == MaintenanceScopeService &amp;&amp; m.ScopeValue == "" </span><span class="cov1" title="1">{
+                return errors.New("scope_value is required for service scope")
+        }</span>
+        <span class="cov8" title="7">if m.StartsAt.IsZero() </span><span class="cov1" title="1">{
+                return errors.New("starts_at is required")
+        }</span>
+        <span class="cov8" title="6">if m.Label == "" </span><span class="cov1" title="1">{
+                return errors.New("label is required")
+        }</span>
+        <span class="cov7" title="5">if m.Description == "" </span><span class="cov1" title="1">{
+                return errors.New("description is required")
+        }</span>
+        <span class="cov6" title="4">if m.EndsAt != nil &amp;&amp; m.EndsAt.Before(m.StartsAt) </span><span class="cov1" title="1">{
+                return errors.New("ends_at must be after starts_at")
+        }</span>
+        <span class="cov5" title="3">return nil</span>
+}
+
+// EnsureMaintenanceModeIndexes creates a unique compound index on (scope_type,
+// scope_value) so at most one record exists per scope - a create for an existing
+// scope updates in place instead of accumulating duplicates. Safe to call on every
+// startup - CreateOne is idempotent for an identical index definition.
+func EnsureMaintenanceModeIndexes(ctx context.Context) error <span class="cov0" title="0">{
+        collection := database.Db.Collection(constants.MaintenanceModeCollection)
+
+        _, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+                Keys:    bson.D{{Key: "scope_type", Value: 1}, {Key: "scope_value", Value: 1}},
+                Options: options.Index().SetUnique(true),
+        })
+        return err
+}</span>
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package server
+
+import (
+        "net/http"
+        "strings"
+        "time"
+
+        "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/admin-api/models"
+        "github.com/sweetrpg/admin-api/server/middleware"
+        apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/authz-client.go/authz"
+        "github.com/sweetrpg/common.go/logging"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/bson/primitive"
+        "go.opentelemetry.io/otel"
+        "go.opentelemetry.io/otel/attribute"
+        oteltrace "go.opentelemetry.io/otel/trace"
+)
+
+func setupAppCardStatusHandlers(g *gin.Engine, authzClient *authz.Client) <span class="cov1" title="1">{
+        logging.Logger.Info("Setting up app-card-status endpoint handlers...")
+
+        g.GET("/app-card-statuses", listAppCardStatuses)
+        g.GET("/app-card-statuses/active", listActiveAppCardStatuses)
+
+        writes := g.Group("/app-card-statuses", middleware.WriteAuth(authzClient))
+        writes.POST("", createAppCardStatus)
+        writes.PUT("/:id", updateAppCardStatus)
+        writes.DELETE("/:id", deleteAppCardStatus)
+}</span>
+
+// appCardStatusRequest is the payload accepted by POST /app-card-statuses and
+// PUT /app-card-statuses/:id.
+type appCardStatusRequest struct {
+        ScopeValue string `json:"scope_value" binding:"required"`
+        Enabled    bool   `json:"enabled"`
+        Label      string `json:"label" binding:"required"`
+}
+
+// Create or update an app-card-status record for a service scope.
+//
+//        @Summary                Create or update an app-card-status record
+//        @Description        Creates an app-card-status record for the given service scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires a forwarded user bearer token carrying the admin role.
+//        @Tags                        app-card-statuses
+//        @Accept                        json
+//        @Produce                json
+//        @Param                        Authorization                        header                                        string        true        "Bearer user access token"
+//        @Param                        app_card_status                        body                appCardStatusRequest        true        "App card status record"
+//        @Success                200                                                {object}        models.AppCardStatus
+//        @Success                201                                                {object}        models.AppCardStatus
+//        @Failure                400                                                {object}        apiv.ErrorVO
+//        @Failure                401                                                {object}        apiv.ErrorVO
+//        @Failure                500                                                {object}        apiv.ErrorVO
+//        @Router                        /app-card-statuses [post]
+func createAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
+        var req appCardStatusRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">now := time.Now().UTC()
+        viewer := authz.Viewer(c)
+        record := &amp;models.AppCardStatus{
+                ScopeType:  models.AppCardStatusScopeService,
+                ScopeValue: req.ScopeValue,
+                Enabled:    req.Enabled,
+                Label:      req.Label,
+                CreatedAt:  now,
+                UpdatedAt:  now,
+                CreatedBy:  viewer,
+                UpdatedBy:  viewer,
+        }
+
+        if err := record.Validate(); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "validation_failed", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(viewer, "upsert_app_card_status", "", record.Label)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to save app card status"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("app-card-statuses").Start(c.Request.Context(), "upsert-app-card-status",
+                oteltrace.WithAttributes(attribute.String("scope_value", record.ScopeValue)))
+        defer span.End()
+
+        existing, err := findAppCardStatusByScope(record.ScopeValue)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to look up existing app card status", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "lookup_failed", Message: "failed to save app card status"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if existing != nil </span><span class="cov0" title="0">{
+                record.ID = existing.ID
+                record.CreatedAt = existing.CreatedAt
+                record.CreatedBy = existing.CreatedBy
+                if _, _, err := database.Update(constants.AppCardStatusCollection, record.ID, record); err != nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("Failed to update app card status", "error", err.Error())
+                        completeAudit(auditID, models.AuditFailed, err.Error())
+                        c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "update_failed", Message: "failed to save app card status"})
+                        return
+                }</span>
+                <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+                c.JSON(http.StatusOK, record)
+                return</span>
+        }
+
+        <span class="cov0" title="0">id, err := database.Insert(constants.AppCardStatusCollection, record)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to insert app card status", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "insert_failed", Message: "failed to save app card status"})
+                return
+        }</span>
+        <span class="cov0" title="0">record.ID = id
+        completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.JSON(http.StatusCreated, record)</span>
+}
+
+// findAppCardStatusByScope returns the existing record for a service scope, or nil if none exists.
+func findAppCardStatusByScope(scopeValue string) (*models.AppCardStatus, error) <span class="cov0" title="0">{
+        filter := bson.D{
+                {Key: "scope_type", Value: models.AppCardStatusScopeService},
+                {Key: "scope_value", Value: scopeValue},
+        }
+        records, err := database.Query[models.AppCardStatus](constants.AppCardStatusCollection, filter, nil, nil, 0, 1)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if len(records) == 0 </span><span class="cov0" title="0">{
+                return nil, nil
+        }</span>
+        <span class="cov0" title="0">return records[0], nil</span>
+}
+
+// List every app-card-status record, for the admin management view.
+//
+//        @Summary                List app-card-status records
+//        @Description        Returns every app-card-status record regardless of enabled state, for admin-web's management view.
+//        @Tags                        app-card-statuses
+//        @Produce                json
+//        @Success                200        {array}                models.AppCardStatus
+//        @Failure                500        {object}        apiv.ErrorVO
+//        @Router                        /app-card-statuses [get]
+func listAppCardStatuses(c *gin.Context) <span class="cov0" title="0">{
+        _, span := otel.Tracer("app-card-statuses").Start(c.Request.Context(), "list-app-card-statuses")
+        records, err := database.Query[models.AppCardStatus](constants.AppCardStatusCollection, bson.D{}, nil, nil, 0, 1000)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to query app card statuses", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "query_failed", Message: "failed to list app card statuses"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if records == nil </span><span class="cov0" title="0">{
+                records = []*models.AppCardStatus{}
+        }</span>
+        <span class="cov0" title="0">c.JSON(http.StatusOK, records)</span>
+}
+
+// List active (enabled) app-card-status records matching the requested service scopes.
+//
+//        @Summary                List active app-card-status records for a set of service scopes
+//        @Description        Returns enabled app-card-status records matching any of the requested service scopes. scope values look like "service:catalog".
+//        @Tags                        app-card-statuses
+//        @Produce                json
+//        @Param                        scope        query                []string        true        "Repeated scope filter, e.g. scope=service:catalog&amp;scope=service:shelf"
+//        @Success                200                {array}                models.AppCardStatus
+//        @Failure                400                {object}        apiv.ErrorVO
+//        @Failure                500                {object}        apiv.ErrorVO
+//        @Router                        /app-card-statuses/active [get]
+func listActiveAppCardStatuses(c *gin.Context) <span class="cov0" title="0">{
+        scopes := c.QueryArray("scope")
+        if len(scopes) == 0 </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "missing_scope", Message: "at least one scope query param is required"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">serviceValues := extractAppCardServiceScopeValues(scopes)
+        if len(serviceValues) == 0 </span><span class="cov0" title="0">{
+                c.JSON(http.StatusOK, []*models.AppCardStatus{})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("app-card-statuses").Start(c.Request.Context(), "list-active-app-card-statuses",
+                oteltrace.WithAttributes(attribute.StringSlice("scope", scopes)))
+
+        filter := bson.D{
+                {Key: "enabled", Value: true},
+                {Key: "scope_type", Value: models.AppCardStatusScopeService},
+                {Key: "scope_value", Value: bson.D{{Key: "$in", Value: serviceValues}}},
+        }
+
+        records, err := database.Query[models.AppCardStatus](constants.AppCardStatusCollection, filter, nil, nil, 0, 1000)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to query active app card statuses", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "query_failed", Message: "failed to list active app card statuses"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if records == nil </span><span class="cov0" title="0">{
+                records = []*models.AppCardStatus{}
+        }</span>
+        <span class="cov0" title="0">c.JSON(http.StatusOK, records)</span>
+}
+
+// Update an app-card-status record by id.
+//
+//        @Summary                Update an app-card-status record
+//        @Description        Replaces the mutable fields of an existing app-card-status record. Requires a forwarded user bearer token carrying the admin role.
+//        @Tags                        app-card-statuses
+//        @Accept                        json
+//        @Produce                json
+//        @Param                        Authorization                        header                                        string        true        "Bearer user access token"
+//        @Param                        id                                                path                string                                        true        "App card status record ID"
+//        @Param                        app_card_status                        body                appCardStatusRequest        true        "Updated app card status record"
+//        @Success                200                                                {object}        models.AppCardStatus
+//        @Failure                400                                                {object}        apiv.ErrorVO
+//        @Failure                401                                                {object}        apiv.ErrorVO
+//        @Failure                404                                                {object}        apiv.ErrorVO
+//        @Failure                500                                                {object}        apiv.ErrorVO
+//        @Router                        /app-card-statuses/{id} [put]
+func updateAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
+        id, err := primitive.ObjectIDFromHex(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_id", Message: "id must be a valid object id"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">var req appCardStatusRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">existing, err := database.Get[models.AppCardStatus](constants.AppCardStatusCollection, id)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to look up app card status", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "lookup_failed", Message: "failed to look up app card status"})
+                return
+        }</span>
+        <span class="cov0" title="0">if existing == nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "app card status not found"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">viewer := authz.Viewer(c)
+        updated := &amp;models.AppCardStatus{
+                ID:         id,
+                ScopeType:  models.AppCardStatusScopeService,
+                ScopeValue: req.ScopeValue,
+                Enabled:    req.Enabled,
+                Label:      req.Label,
+                CreatedAt:  existing.CreatedAt,
+                UpdatedAt:  time.Now().UTC(),
+                CreatedBy:  existing.CreatedBy,
+                UpdatedBy:  viewer,
+        }
+
+        if err := updated.Validate(); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "validation_failed", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(viewer, "update_app_card_status", id.Hex(), updated.Label)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to update app card status"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("app-card-statuses").Start(c.Request.Context(), "update-app-card-status",
+                oteltrace.WithAttributes(attribute.String("id", id.Hex())))
+        matched, _, err := database.Update(constants.AppCardStatusCollection, id, updated)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to update app card status", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "update_failed", Message: "failed to update app card status"})
+                return
+        }</span>
+        <span class="cov0" title="0">if matched == 0 </span><span class="cov0" title="0">{
+                completeAudit(auditID, models.AuditFailed, "app card status not found")
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "app card status not found"})
+                return
+        }</span>
+        <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.JSON(http.StatusOK, updated)</span>
+}
+
+// Delete an app-card-status record.
+//
+//        @Summary                Delete an app-card-status record
+//        @Description        Deletes an app-card-status record; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.
+//        @Tags                        app-card-statuses
+//        @Param                        Authorization        header        string        true        "Bearer user access token"
+//        @Param                        id                                path        string        true        "App card status record ID"
+//        @Success                204                                {object}        interface{}
+//        @Failure                400                                {object}        apiv.ErrorVO
+//        @Failure                401                                {object}        apiv.ErrorVO
+//        @Failure                404                                {object}        apiv.ErrorVO
+//        @Failure                500                                {object}        apiv.ErrorVO
+//        @Router                        /app-card-statuses/{id} [delete]
+func deleteAppCardStatus(c *gin.Context) <span class="cov0" title="0">{
+        id, err := primitive.ObjectIDFromHex(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_id", Message: "id must be a valid object id"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">viewer := authz.Viewer(c)
+        auditID, err := models.RecordAuditAttempt(viewer, "delete_app_card_status", id.Hex(), "")
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to delete app card status"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("app-card-statuses").Start(c.Request.Context(), "delete-app-card-status",
+                oteltrace.WithAttributes(attribute.String("id", id.Hex())))
+        deleted, err := database.Delete[models.AppCardStatus](constants.AppCardStatusCollection, id)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to delete app card status", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "delete_failed", Message: "failed to delete app card status"})
+                return
+        }</span>
+        <span class="cov0" title="0">if !deleted </span><span class="cov0" title="0">{
+                completeAudit(auditID, models.AuditFailed, "app card status not found")
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "app card status not found"})
+                return
+        }</span>
+        <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.Status(http.StatusNoContent)</span>
+}
+
+// extractAppCardServiceScopeValues returns the service names from a list of "service:&lt;name&gt;"
+// scope query params, ignoring any other scope type.
+func extractAppCardServiceScopeValues(scopes []string) []string <span class="cov7" title="4">{
+        var serviceValues []string
+        for _, raw := range scopes </span><span class="cov7" title="5">{
+                scopeType, scopeValue := parseAppCardScope(raw)
+                if scopeType == "service" &amp;&amp; scopeValue != "" </span><span class="cov5" title="3">{
+                        serviceValues = append(serviceValues, scopeValue)
+                }</span>
+        }
+        <span class="cov7" title="4">return serviceValues</span>
+}
+
+// parseAppCardScope splits a "type" or "type:value" scope query param into its parts.
+func parseAppCardScope(raw string) (string, string) <span class="cov10" title="8">{
+        parts := strings.SplitN(raw, ":", 2)
+        if len(parts) == 2 </span><span class="cov8" title="6">{
+                return parts[0], parts[1]
+        }</span>
+        <span class="cov4" title="2">return parts[0], ""</span>
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package server
+
+import (
+        "net/http"
+        "sort"
+        "strings"
+        "time"
+
+        "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/admin-api/models"
+        "github.com/sweetrpg/admin-api/server/middleware"
+        apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/authz-client.go/authz"
+        "github.com/sweetrpg/common.go/logging"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/bson/primitive"
+        "go.opentelemetry.io/otel"
+        "go.opentelemetry.io/otel/attribute"
+        oteltrace "go.opentelemetry.io/otel/trace"
+)
+
+func setupBannerHandlers(g *gin.Engine, authzClient *authz.Client) <span class="cov1" title="1">{
+        logging.Logger.Info("Setting up banner endpoint handlers...")
+
+        g.GET("/banners", listBanners)
+
+        writes := g.Group("/banners", middleware.WriteAuth(authzClient))
+        writes.POST("", createBanner)
+        writes.PUT("/:id", updateBanner)
+        writes.DELETE("/:id", deleteBanner)
+}</span>
+
+// createBannerRequest is the payload accepted by POST /banners.
+type createBannerRequest struct {
+        ScopeType  models.ScopeType `json:"scope_type" binding:"required"`
+        ScopeValue string           `json:"scope_value"`
+        Severity   models.Severity  `json:"severity" binding:"required"`
+        Message    string           `json:"message" binding:"required"`
+        StartsAt   *time.Time       `json:"starts_at"`
+        ExpiresAt  time.Time        `json:"expires_at" binding:"required"`
+}
+
+// updateBannerRequest is the payload accepted by PUT /banners/:id. created_by and
+// created_at are immutable once a banner exists, so they aren't part of the update
+// payload.
+type updateBannerRequest struct {
+        ScopeType  models.ScopeType `json:"scope_type" binding:"required"`
+        ScopeValue string           `json:"scope_value"`
+        Severity   models.Severity  `json:"severity" binding:"required"`
+        Message    string           `json:"message" binding:"required"`
+        StartsAt   *time.Time       `json:"starts_at"`
+        ExpiresAt  time.Time        `json:"expires_at" binding:"required"`
+}
+
+// Create a banner message.
+//
+//        @Summary                Create a banner message
+//        @Description        Creates a new admin banner message. expires_at is required; a banner without one is rejected. Requires a forwarded user bearer token carrying the admin role.
+//        @Tags                        banners
+//        @Accept                        json
+//        @Produce                json
+//        @Param                        Authorization                                header                string                                true        "Bearer user access token"
+//        @Param                        banner                                                body                createBannerRequest        true        "Banner message"
+//        @Success                201                                                        {object}        models.BannerMessage
+//        @Failure                400                                                        {object}        apiv.ErrorVO
+//        @Failure                401                                                        {object}        apiv.ErrorVO
+//        @Failure                500                                                        {object}        apiv.ErrorVO
+//        @Router                        /banners [post]
+func createBanner(c *gin.Context) <span class="cov0" title="0">{
+        var req createBannerRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">now := time.Now().UTC()
+        viewer := authz.Viewer(c)
+        banner := &amp;models.BannerMessage{
+                ScopeType:  req.ScopeType,
+                ScopeValue: req.ScopeValue,
+                Severity:   req.Severity,
+                Message:    req.Message,
+                StartsAt:   req.StartsAt,
+                ExpiresAt:  req.ExpiresAt,
+                CreatedBy:  viewer,
+                CreatedAt:  now,
+                UpdatedBy:  viewer,
+                UpdatedAt:  now,
+        }
+
+        if err := banner.Validate(); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "validation_failed", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(viewer, "create_banner", "", req.Message)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to create banner"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("banners").Start(c.Request.Context(), "create-banner")
+        id, err := database.Insert(constants.BannerCollection, banner)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to insert banner", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "insert_failed", Message: "failed to create banner"})
+                return
+        }</span>
+        <span class="cov0" title="0">banner.ID = id
+        completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.JSON(http.StatusCreated, banner)</span>
+}
+
+// completeAudit finalizes an audit record's status. Best-effort: logged as a
+// warning on failure rather than surfaced to the caller, since the mutation
+// it covers has already happened by the time this runs.
+func completeAudit(auditID primitive.ObjectID, status models.AuditStatus, errMessage string) <span class="cov0" title="0">{
+        if err := models.CompleteAudit(auditID, status, errMessage); err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Warn("Failed to complete audit record", "auditID", auditID, "status", status, "error", err.Error())
+        }</span>
+}
+
+// List banner messages, either scoped-and-active (for consumers) or all of them
+// regardless of scope/expiration (for the admin UI).
+//
+//        @Summary                List banners
+//        @Description        Default mode returns active (started, not expired) banners matching any of the requested scopes, most-severe-first; platform-scoped banners are always included. scope values look like "platform", "service:catalog", or "page:/catalog/browse". Pass include_inactive=true (admin-web's management view) to instead return every banner regardless of scope or expiration - scope params are ignored in that mode.
+//        @Tags                        banners
+//        @Produce                json
+//        @Param                        scope                                query                []string        false        "Repeated scope filter, e.g. scope=platform&amp;scope=service:catalog - required unless include_inactive=true"
+//        @Param                        include_inactive        query                bool                false        "Return every banner (any scope, expired or scheduled included) for admin management views"
+//        @Success                200                {array}                models.BannerMessage
+//        @Failure                400                {object}        apiv.ErrorVO
+//        @Failure                500                {object}        apiv.ErrorVO
+//        @Router                        /banners [get]
+func listBanners(c *gin.Context) <span class="cov1" title="1">{
+        includeInactive := c.Query("include_inactive") == "true"
+        scopes := c.QueryArray("scope")
+        if !includeInactive &amp;&amp; len(scopes) == 0 </span><span class="cov1" title="1">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "missing_scope", Message: "at least one scope query param is required unless include_inactive=true"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">filter := bson.D{}
+        if !includeInactive </span><span class="cov0" title="0">{
+                var serviceValues, pageValues []string
+                for _, raw := range scopes </span><span class="cov0" title="0">{
+                        scopeType, scopeValue := parseScope(raw)
+                        switch scopeType </span>{
+                        case models.ScopeService:<span class="cov0" title="0">
+                                serviceValues = append(serviceValues, scopeValue)</span>
+                        case models.ScopePage:<span class="cov0" title="0">
+                                pageValues = append(pageValues, scopeValue)</span>
+                        }
+                        // models.ScopePlatform requires no extra collection - platform banners are
+                        // always included below.
+                }
+
+                <span class="cov0" title="0">now := time.Now().UTC()
+                activeFilter := bson.D{
+                        {Key: "expires_at", Value: bson.D{{Key: "$gt", Value: now}}},
+                        {Key: "$or", Value: bson.A{
+                                bson.D{{Key: "starts_at", Value: bson.D{{Key: "$exists", Value: false}}}},
+                                bson.D{{Key: "starts_at", Value: nil}},
+                                bson.D{{Key: "starts_at", Value: bson.D{{Key: "$lte", Value: now}}}},
+                        }},
+                }
+
+                scopeOr := bson.A{bson.D{{Key: "scope_type", Value: models.ScopePlatform}}}
+                if len(serviceValues) &gt; 0 </span><span class="cov0" title="0">{
+                        scopeOr = append(scopeOr, bson.D{
+                                {Key: "scope_type", Value: models.ScopeService},
+                                {Key: "scope_value", Value: bson.D{{Key: "$in", Value: serviceValues}}},
+                        })
+                }</span>
+                <span class="cov0" title="0">if len(pageValues) &gt; 0 </span><span class="cov0" title="0">{
+                        scopeOr = append(scopeOr, bson.D{
+                                {Key: "scope_type", Value: models.ScopePage},
+                                {Key: "scope_value", Value: bson.D{{Key: "$in", Value: pageValues}}},
+                        })
+                }</span>
+
+                <span class="cov0" title="0">filter = bson.D{
+                        {Key: "$and", Value: bson.A{activeFilter, bson.D{{Key: "$or", Value: scopeOr}}}},
+                }</span>
+        }
+
+        <span class="cov0" title="0">_, span := otel.Tracer("banners").Start(c.Request.Context(), "list-banners",
+                oteltrace.WithAttributes(
+                        attribute.StringSlice("scope", scopes),
+                        attribute.Bool("include_inactive", includeInactive)))
+        banners, err := database.Query[models.BannerMessage](constants.BannerCollection, filter, nil, nil, 0, 1000)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to query banners", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "query_failed", Message: "failed to list banners"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">sort.SliceStable(banners, func(i, j int) bool </span><span class="cov0" title="0">{
+                return banners[i].Severity.Rank() &lt; banners[j].Severity.Rank()
+        }</span>)
+
+        <span class="cov0" title="0">if banners == nil </span><span class="cov0" title="0">{
+                banners = []*models.BannerMessage{}
+        }</span>
+        <span class="cov0" title="0">c.JSON(http.StatusOK, banners)</span>
+}
+
+// Update a banner message.
+//
+//        @Summary                Update a banner message
+//        @Description        Replaces the mutable fields of an existing banner message. expires_at is required. Requires a forwarded user bearer token carrying the admin role.
+//        @Tags                        banners
+//        @Accept                        json
+//        @Produce                json
+//        @Param                        Authorization                                header                string                                true        "Bearer user access token"
+//        @Param                        id                                                        path                string                                true        "Banner ID"
+//        @Param                        banner                                                body                updateBannerRequest        true        "Updated banner message"
+//        @Success                200                                                        {object}        models.BannerMessage
+//        @Failure                400                                                        {object}        apiv.ErrorVO
+//        @Failure                401                                                        {object}        apiv.ErrorVO
+//        @Failure                404                                                        {object}        apiv.ErrorVO
+//        @Failure                500                                                        {object}        apiv.ErrorVO
+//        @Router                        /banners/{id} [put]
+func updateBanner(c *gin.Context) <span class="cov0" title="0">{
+        id, err := primitive.ObjectIDFromHex(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_id", Message: "id must be a valid object id"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">var req updateBannerRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">existing, err := database.Get[models.BannerMessage](constants.BannerCollection, id)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to look up banner", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "lookup_failed", Message: "failed to look up banner"})
+                return
+        }</span>
+        <span class="cov0" title="0">if existing == nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "banner not found"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">viewer := authz.Viewer(c)
+        updated := &amp;models.BannerMessage{
+                ID:         id,
+                ScopeType:  req.ScopeType,
+                ScopeValue: req.ScopeValue,
+                Severity:   req.Severity,
+                Message:    req.Message,
+                StartsAt:   req.StartsAt,
+                ExpiresAt:  req.ExpiresAt,
+                CreatedBy:  existing.CreatedBy,
+                CreatedAt:  existing.CreatedAt,
+                UpdatedBy:  viewer,
+                UpdatedAt:  time.Now().UTC(),
+        }
+
+        if err := updated.Validate(); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "validation_failed", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(viewer, "update_banner", id.Hex(), updated.Message)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to update banner"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("banners").Start(c.Request.Context(), "update-banner",
+                oteltrace.WithAttributes(attribute.String("id", id.Hex())))
+        matched, _, err := database.Update(constants.BannerCollection, id, updated)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to update banner", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "update_failed", Message: "failed to update banner"})
+                return
+        }</span>
+        <span class="cov0" title="0">if matched == 0 </span><span class="cov0" title="0">{
+                completeAudit(auditID, models.AuditFailed, "banner not found")
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "banner not found"})
+                return
+        }</span>
+        <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.JSON(http.StatusOK, updated)</span>
+}
+
+// Delete a banner message.
+//
+//        @Summary                Delete a banner message
+//        @Description        Deletes a banner message; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.
+//        @Tags                        banners
+//        @Param                        Authorization                                header        string        true        "Bearer user access token"
+//        @Param                        id                                                        path        string        true        "Banner ID"
+//        @Success                204                                                        {object}        interface{}
+//        @Failure                400                                                        {object}        apiv.ErrorVO
+//        @Failure                401                                                        {object}        apiv.ErrorVO
+//        @Failure                404                                                        {object}        apiv.ErrorVO
+//        @Failure                500                                                        {object}        apiv.ErrorVO
+//        @Router                        /banners/{id} [delete]
+func deleteBanner(c *gin.Context) <span class="cov0" title="0">{
+        id, err := primitive.ObjectIDFromHex(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_id", Message: "id must be a valid object id"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">viewer := authz.Viewer(c)
+        auditID, err := models.RecordAuditAttempt(viewer, "delete_banner", id.Hex(), "")
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to delete banner"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("banners").Start(c.Request.Context(), "delete-banner",
+                oteltrace.WithAttributes(attribute.String("id", id.Hex())))
+        deleted, err := database.Delete[models.BannerMessage](constants.BannerCollection, id)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to delete banner", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "delete_failed", Message: "failed to delete banner"})
+                return
+        }</span>
+        <span class="cov0" title="0">if !deleted </span><span class="cov0" title="0">{
+                completeAudit(auditID, models.AuditFailed, "banner not found")
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "banner not found"})
+                return
+        }</span>
+        <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.Status(http.StatusNoContent)</span>
+}
+
+// parseScope splits a "type" or "type:value" scope query param into its parts.
+// An unrecognized type is passed through as-is and matched against nothing, since the
+// filter builder only special-cases service/page.
+func parseScope(raw string) (models.ScopeType, string) <span class="cov10" title="3">{
+        parts := strings.SplitN(raw, ":", 2)
+        scopeType := models.ScopeType(parts[0])
+        if len(parts) == 2 </span><span class="cov6" title="2">{
+                return scopeType, parts[1]
+        }</span>
+        <span class="cov1" title="1">return scopeType, ""</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package server
+
+import (
+        "fmt"
+        "net/http"
+        "strings"
+        "time"
+
+        "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/admin-api/feedback"
+        apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/common.go/logging"
+)
+
+// feedbackTypeBug and feedbackTypeFeature are the only accepted values for createFeedbackRequest.Type.
+const (
+        feedbackTypeBug     = "bug"
+        feedbackTypeFeature = "feature"
+)
+
+// createFeedbackRequest is the payload accepted by POST /feedback. Website and RenderedAt back
+// the bot-detection check (honeypot + minimum fill-time); real users never populate Website
+// and never submit faster than FeedbackMinFillTime after RenderedAt - see design.md.
+type createFeedbackRequest struct {
+        Type          string     `json:"type" binding:"required" example:"bug"`
+        Title         string     `json:"title" binding:"required" example:"Catalog search returns no results for exact ISBN match"`
+        Body          string     `json:"body" binding:"required" example:"Searching for 9780786965601 returns zero results, even though the volume exists in the catalog."`
+        ReporterEmail string     `json:"reporter_email,omitempty" example:"reporter@example.com"`
+        Source        string     `json:"source,omitempty" example:"catalog-web:/catalog/search"`
+        Website       string     `json:"website,omitempty"`
+        RenderedAt    *time.Time `json:"rendered_at,omitempty"`
+}
+
+// feedbackAcceptedResponse is the uniform success body - identical whether a GitHub Issue was
+// actually created or the submission was silently discarded as bot traffic. Deliberately gives
+// a bot no signal about which outcome occurred.
+type feedbackAcceptedResponse struct {
+        Status string `json:"status" example:"accepted"`
+}
+
+func setupFeedbackHandlers(g *gin.Engine, issueCreator feedback.IssueCreator, rateLimit gin.HandlerFunc) <span class="cov10" title="14">{
+        logging.Logger.Info("Setting up feedback endpoint handlers...")
+
+        g.POST("/feedback", rateLimit, createFeedback(issueCreator))
+}</span>
+
+// Submit feedback.
+//
+//        @Summary                Submit feedback
+//        @Description        Accept an anonymous bug report or feature request and file it as a GitHub Issue on sweetrpg/platform, labeled source:in-app-feedback plus bug or feature. No GitHub credentials are ever requested from or exposed to the caller. Subject to a feedback-specific rate limit stricter than this service's default.
+//        @Tags                        feedback
+//        @Accept                        json
+//        @Produce                json
+//        @Param                        body        body                createFeedbackRequest        true        "Feedback submission"
+//        @Success                200                {object}        feedbackAcceptedResponse
+//        @Failure                400                {object}        apiv.ErrorVO        "missing/invalid type, title, or body, or title/body exceeds the length cap"
+//        @Failure                429                {object}        apiv.ErrorVO        "feedback-specific rate limit exceeded"
+//        @Failure                502                {object}        apiv.ErrorVO        "GitHub API call failed or timed out"
+//        @Failure                503                {object}        apiv.ErrorVO        "rate-limit backend unavailable"
+//        @Router                        /feedback [post]
+func createFeedback(issueCreator feedback.IssueCreator) gin.HandlerFunc <span class="cov10" title="14">{
+        return func(c *gin.Context) </span><span class="cov10" title="14">{
+                var req createFeedbackRequest
+                if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov4" title="3">{
+                        c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: err.Error()})
+                        return
+                }</span>
+
+                <span class="cov9" title="11">if req.Type != feedbackTypeBug &amp;&amp; req.Type != feedbackTypeFeature </span><span class="cov1" title="1">{
+                        c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_type", Message: "type must be \"bug\" or \"feature\""})
+                        return
+                }</span>
+                <span class="cov8" title="10">if strings.TrimSpace(req.Title) == "" || strings.TrimSpace(req.Body) == "" </span><span class="cov1" title="1">{
+                        c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: "title and body are required"})
+                        return
+                }</span>
+                <span class="cov8" title="9">if len(req.Title) &gt; constants.FeedbackTitleMaxLength </span><span class="cov1" title="1">{
+                        c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "title_too_long", Message: fmt.Sprintf("title exceeds %d characters", constants.FeedbackTitleMaxLength)})
+                        return
+                }</span>
+                <span class="cov8" title="8">if len(req.Body) &gt; constants.FeedbackBodyMaxLength </span><span class="cov1" title="1">{
+                        c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "body_too_long", Message: fmt.Sprintf("body exceeds %d characters", constants.FeedbackBodyMaxLength)})
+                        return
+                }</span>
+
+                <span class="cov7" title="7">if looksAutomated(req) </span><span class="cov3" title="2">{
+                        logging.Logger.Warn("Discarding feedback submission that failed bot-detection check")
+                        c.JSON(http.StatusOK, feedbackAcceptedResponse{Status: "accepted"})
+                        return
+                }</span>
+
+                <span class="cov6" title="5">body := issueBody(req)
+                labels := []string{constants.FeedbackSourceLabel, req.Type}
+                if err := issueCreator.CreateIssue(c.Request.Context(), req.Title, body, labels); err != nil </span><span class="cov1" title="1">{
+                        logging.Logger.Error("Failed to create GitHub issue from feedback submission", "error", err.Error())
+                        c.JSON(http.StatusBadGateway, apiv.ErrorVO{Error: "github_unavailable", Message: "failed to record feedback; please try again shortly"})
+                        return
+                }</span>
+
+                <span class="cov5" title="4">c.JSON(http.StatusOK, feedbackAcceptedResponse{Status: "accepted"})</span>
+        }
+}
+
+// looksAutomated reports whether a submission fails the bot-detection check: a populated
+// honeypot field (real users never see or fill it), or submission faster than
+// constants.FeedbackMinFillTime after the client-reported render time.
+func looksAutomated(req createFeedbackRequest) bool <span class="cov7" title="7">{
+        if req.Website != "" </span><span class="cov1" title="1">{
+                return true
+        }</span>
+        <span class="cov7" title="6">if req.RenderedAt != nil &amp;&amp; time.Since(*req.RenderedAt) &lt; constants.FeedbackMinFillTime </span><span class="cov1" title="1">{
+                return true
+        }</span>
+        <span class="cov6" title="5">return false</span>
+}
+
+// issueBody renders the submitted body plus any optional fields, appended only when present
+// per the "Submission without optional fields" scenario - no empty placeholders.
+func issueBody(req createFeedbackRequest) string <span class="cov6" title="5">{
+        var b strings.Builder
+        b.WriteString(req.Body)
+        if req.ReporterEmail != "" </span><span class="cov1" title="1">{
+                fmt.Fprintf(&amp;b, "\n\n---\nReporter email: %s", req.ReporterEmail)
+        }</span>
+        <span class="cov6" title="5">if req.Source != "" </span><span class="cov1" title="1">{
+                fmt.Fprintf(&amp;b, "\n\nSource: %s", req.Source)
+        }</span>
+        <span class="cov6" title="5">return b.String()</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package server
+
+import (
+        "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/feedback"
+        "github.com/sweetrpg/authz-client.go/authz"
+)
+
+func SetupHandlers(g *gin.Engine, authzClient *authz.Client, issueCreator feedback.IssueCreator, feedbackRateLimit gin.HandlerFunc) <span class="cov8" title="1">{
+        setupBannerHandlers(g, authzClient)
+        setupMaintenanceModeHandlers(g, authzClient)
+        setupAppCardStatusHandlers(g, authzClient)
+        setupStatusHandlers(g)
+        setupFeedbackHandlers(g, issueCreator, feedbackRateLimit)
+}</span>
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package server
+
+import (
+        "net/http"
+        "strings"
+        "time"
+
+        "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/admin-api/constants"
+        "github.com/sweetrpg/admin-api/models"
+        "github.com/sweetrpg/admin-api/server/middleware"
+        apiv "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/authz-client.go/authz"
+        "github.com/sweetrpg/common.go/logging"
+        "github.com/sweetrpg/mongodb.go/database"
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/bson/primitive"
+        "go.opentelemetry.io/otel"
+        "go.opentelemetry.io/otel/attribute"
+        oteltrace "go.opentelemetry.io/otel/trace"
+)
+
+func setupMaintenanceModeHandlers(g *gin.Engine, authzClient *authz.Client) <span class="cov1" title="1">{
+        logging.Logger.Info("Setting up maintenance-mode endpoint handlers...")
+
+        g.GET("/maintenance-modes", listMaintenanceModes)
+        g.GET("/maintenance-modes/active", listActiveMaintenanceModes)
+
+        writes := g.Group("/maintenance-modes", middleware.WriteAuth(authzClient))
+        writes.POST("", createMaintenanceMode)
+        writes.PUT("/:id", updateMaintenanceMode)
+        writes.DELETE("/:id", deleteMaintenanceMode)
+}</span>
+
+// maintenanceModeRequest is the payload accepted by POST /maintenance-modes and
+// PUT /maintenance-modes/:id.
+type maintenanceModeRequest struct {
+        ScopeType   models.MaintenanceScopeType `json:"scope_type" binding:"required"`
+        ScopeValue  string                      `json:"scope_value"`
+        Enabled     bool                        `json:"enabled"`
+        StartsAt    time.Time                   `json:"starts_at" binding:"required"`
+        EndsAt      *time.Time                  `json:"ends_at"`
+        Label       string                      `json:"label" binding:"required"`
+        Description string                      `json:"description" binding:"required"`
+}
+
+// Create or update a maintenance-mode record for a scope.
+//
+//        @Summary                Create or update a maintenance-mode record
+//        @Description        Creates a maintenance-mode record for the given scope, or updates the existing record for that scope in place if one already exists - at most one record per scope is kept. Requires a forwarded user bearer token carrying the admin role.
+//        @Tags                        maintenance-modes
+//        @Accept                        json
+//        @Produce                json
+//        @Param                        Authorization                                header                                        string        true        "Bearer user access token"
+//        @Param                        maintenance_mode                        body                maintenanceModeRequest        true        "Maintenance-mode record"
+//        @Success                200                                                        {object}        models.MaintenanceMode
+//        @Success                201                                                        {object}        models.MaintenanceMode
+//        @Failure                400                                                        {object}        apiv.ErrorVO
+//        @Failure                401                                                        {object}        apiv.ErrorVO
+//        @Failure                500                                                        {object}        apiv.ErrorVO
+//        @Router                        /maintenance-modes [post]
+func createMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
+        var req maintenanceModeRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">now := time.Now().UTC()
+        viewer := authz.Viewer(c)
+        record := &amp;models.MaintenanceMode{
+                ScopeType:   req.ScopeType,
+                ScopeValue:  req.ScopeValue,
+                Enabled:     req.Enabled,
+                StartsAt:    req.StartsAt,
+                EndsAt:      req.EndsAt,
+                Label:       req.Label,
+                Description: req.Description,
+                CreatedBy:   viewer,
+                CreatedAt:   now,
+                UpdatedBy:   viewer,
+                UpdatedAt:   now,
+        }
+
+        if err := record.Validate(); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "validation_failed", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(viewer, "upsert_maintenance_mode", "", record.Label)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to save maintenance mode"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("maintenance-modes").Start(c.Request.Context(), "upsert-maintenance-mode",
+                oteltrace.WithAttributes(
+                        attribute.String("scope_type", string(record.ScopeType)),
+                        attribute.String("scope_value", record.ScopeValue)))
+        defer span.End()
+
+        existing, err := findMaintenanceModeByScope(record.ScopeType, record.ScopeValue)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to look up existing maintenance mode", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "lookup_failed", Message: "failed to save maintenance mode"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if existing != nil </span><span class="cov0" title="0">{
+                record.ID = existing.ID
+                record.CreatedAt = existing.CreatedAt
+                record.CreatedBy = existing.CreatedBy
+                if _, _, err := database.Update(constants.MaintenanceModeCollection, record.ID, record); err != nil </span><span class="cov0" title="0">{
+                        logging.Logger.Error("Failed to update maintenance mode", "error", err.Error())
+                        completeAudit(auditID, models.AuditFailed, err.Error())
+                        c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "update_failed", Message: "failed to save maintenance mode"})
+                        return
+                }</span>
+                <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+                c.JSON(http.StatusOK, record)
+                return</span>
+        }
+
+        <span class="cov0" title="0">id, err := database.Insert(constants.MaintenanceModeCollection, record)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to insert maintenance mode", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "insert_failed", Message: "failed to save maintenance mode"})
+                return
+        }</span>
+        <span class="cov0" title="0">record.ID = id
+        completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.JSON(http.StatusCreated, record)</span>
+}
+
+// findMaintenanceModeByScope returns the existing record for a scope, or nil if none
+// exists.
+func findMaintenanceModeByScope(scopeType models.MaintenanceScopeType, scopeValue string) (*models.MaintenanceMode, error) <span class="cov0" title="0">{
+        filter := bson.D{
+                {Key: "scope_type", Value: scopeType},
+                {Key: "scope_value", Value: scopeValue},
+        }
+        records, err := database.Query[models.MaintenanceMode](constants.MaintenanceModeCollection, filter, nil, nil, 0, 1)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if len(records) == 0 </span><span class="cov0" title="0">{
+                return nil, nil
+        }</span>
+        <span class="cov0" title="0">return records[0], nil</span>
+}
+
+// List every maintenance-mode record, for the admin management view.
+//
+//        @Summary                List maintenance-mode records
+//        @Description        Returns every maintenance-mode record (platform and every known service scope) regardless of enabled state, for admin-web's management view.
+//        @Tags                        maintenance-modes
+//        @Produce                json
+//        @Success                200        {array}                models.MaintenanceMode
+//        @Failure                500        {object}        apiv.ErrorVO
+//        @Router                        /maintenance-modes [get]
+func listMaintenanceModes(c *gin.Context) <span class="cov0" title="0">{
+        _, span := otel.Tracer("maintenance-modes").Start(c.Request.Context(), "list-maintenance-modes")
+        records, err := database.Query[models.MaintenanceMode](constants.MaintenanceModeCollection, bson.D{}, nil, nil, 0, 1000)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to query maintenance modes", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "query_failed", Message: "failed to list maintenance modes"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if records == nil </span><span class="cov0" title="0">{
+                records = []*models.MaintenanceMode{}
+        }</span>
+        <span class="cov0" title="0">c.JSON(http.StatusOK, records)</span>
+}
+
+// List active (enabled) maintenance-mode records matching the requested scopes, for
+// consuming frontends.
+//
+//        @Summary                List active maintenance-mode records for a set of scopes
+//        @Description        Returns enabled maintenance-mode records matching any of the requested scopes; platform-scoped records are always included. scope values look like "platform" or "service:catalog".
+//        @Tags                        maintenance-modes
+//        @Produce                json
+//        @Param                        scope        query                []string        true        "Repeated scope filter, e.g. scope=platform&amp;scope=service:catalog"
+//        @Success                200                {array}                models.MaintenanceMode
+//        @Failure                400                {object}        apiv.ErrorVO
+//        @Failure                500                {object}        apiv.ErrorVO
+//        @Router                        /maintenance-modes/active [get]
+func listActiveMaintenanceModes(c *gin.Context) <span class="cov0" title="0">{
+        scopes := c.QueryArray("scope")
+        if len(scopes) == 0 </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "missing_scope", Message: "at least one scope query param is required"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">filter := buildActiveMaintenanceModeFilter(scopes)
+
+        _, span := otel.Tracer("maintenance-modes").Start(c.Request.Context(), "list-active-maintenance-modes",
+                oteltrace.WithAttributes(attribute.StringSlice("scope", scopes)))
+        records, err := database.Query[models.MaintenanceMode](constants.MaintenanceModeCollection, filter, nil, nil, 0, 1000)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to query active maintenance modes", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "query_failed", Message: "failed to list active maintenance modes"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if records == nil </span><span class="cov0" title="0">{
+                records = []*models.MaintenanceMode{}
+        }</span>
+        <span class="cov0" title="0">c.JSON(http.StatusOK, records)</span>
+}
+
+// Update a maintenance-mode record by id.
+//
+//        @Summary                Update a maintenance-mode record
+//        @Description        Replaces the mutable fields of an existing maintenance-mode record. Requires a forwarded user bearer token carrying the admin role.
+//        @Tags                        maintenance-modes
+//        @Accept                        json
+//        @Produce                json
+//        @Param                        Authorization                                header                                        string        true        "Bearer user access token"
+//        @Param                        id                                                        path                string                                        true        "Maintenance-mode record ID"
+//        @Param                        maintenance_mode                        body                maintenanceModeRequest        true        "Updated maintenance-mode record"
+//        @Success                200                                                        {object}        models.MaintenanceMode
+//        @Failure                400                                                        {object}        apiv.ErrorVO
+//        @Failure                401                                                        {object}        apiv.ErrorVO
+//        @Failure                404                                                        {object}        apiv.ErrorVO
+//        @Failure                500                                                        {object}        apiv.ErrorVO
+//        @Router                        /maintenance-modes/{id} [put]
+func updateMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
+        id, err := primitive.ObjectIDFromHex(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_id", Message: "id must be a valid object id"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">var req maintenanceModeRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_request", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">existing, err := database.Get[models.MaintenanceMode](constants.MaintenanceModeCollection, id)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to look up maintenance mode", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "lookup_failed", Message: "failed to look up maintenance mode"})
+                return
+        }</span>
+        <span class="cov0" title="0">if existing == nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "maintenance mode not found"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">viewer := authz.Viewer(c)
+        updated := &amp;models.MaintenanceMode{
+                ID:          id,
+                ScopeType:   req.ScopeType,
+                ScopeValue:  req.ScopeValue,
+                Enabled:     req.Enabled,
+                StartsAt:    req.StartsAt,
+                EndsAt:      req.EndsAt,
+                Label:       req.Label,
+                Description: req.Description,
+                CreatedBy:   existing.CreatedBy,
+                CreatedAt:   existing.CreatedAt,
+                UpdatedBy:   viewer,
+                UpdatedAt:   time.Now().UTC(),
+        }
+
+        if err := updated.Validate(); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "validation_failed", Message: err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">auditID, err := models.RecordAuditAttempt(viewer, "update_maintenance_mode", id.Hex(), updated.Label)
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to update maintenance mode"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("maintenance-modes").Start(c.Request.Context(), "update-maintenance-mode",
+                oteltrace.WithAttributes(attribute.String("id", id.Hex())))
+        matched, _, err := database.Update(constants.MaintenanceModeCollection, id, updated)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to update maintenance mode", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "update_failed", Message: "failed to update maintenance mode"})
+                return
+        }</span>
+        <span class="cov0" title="0">if matched == 0 </span><span class="cov0" title="0">{
+                completeAudit(auditID, models.AuditFailed, "maintenance mode not found")
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "maintenance mode not found"})
+                return
+        }</span>
+        <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.JSON(http.StatusOK, updated)</span>
+}
+
+// Delete a maintenance-mode record.
+//
+//        @Summary                Delete a maintenance-mode record
+//        @Description        Deletes a maintenance-mode record; it is immediately excluded from subsequent queries. Requires a forwarded user bearer token carrying the admin role.
+//        @Tags                        maintenance-modes
+//        @Param                        Authorization                                header        string        true        "Bearer user access token"
+//        @Param                        id                                                        path        string        true        "Maintenance-mode record ID"
+//        @Success                204                                                        {object}        interface{}
+//        @Failure                400                                                        {object}        apiv.ErrorVO
+//        @Failure                401                                                        {object}        apiv.ErrorVO
+//        @Failure                404                                                        {object}        apiv.ErrorVO
+//        @Failure                500                                                        {object}        apiv.ErrorVO
+//        @Router                        /maintenance-modes/{id} [delete]
+func deleteMaintenanceMode(c *gin.Context) <span class="cov0" title="0">{
+        id, err := primitive.ObjectIDFromHex(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, apiv.ErrorVO{Error: "invalid_id", Message: "id must be a valid object id"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">viewer := authz.Viewer(c)
+        auditID, err := models.RecordAuditAttempt(viewer, "delete_maintenance_mode", id.Hex(), "")
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to record audit attempt", "error", err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "audit_failed", Message: "failed to delete maintenance mode"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, span := otel.Tracer("maintenance-modes").Start(c.Request.Context(), "delete-maintenance-mode",
+                oteltrace.WithAttributes(attribute.String("id", id.Hex())))
+        deleted, err := database.Delete[models.MaintenanceMode](constants.MaintenanceModeCollection, id)
+        span.End()
+        if err != nil </span><span class="cov0" title="0">{
+                logging.Logger.Error("Failed to delete maintenance mode", "error", err.Error())
+                completeAudit(auditID, models.AuditFailed, err.Error())
+                c.JSON(http.StatusInternalServerError, apiv.ErrorVO{Error: "delete_failed", Message: "failed to delete maintenance mode"})
+                return
+        }</span>
+        <span class="cov0" title="0">if !deleted </span><span class="cov0" title="0">{
+                completeAudit(auditID, models.AuditFailed, "maintenance mode not found")
+                c.JSON(http.StatusNotFound, apiv.ErrorVO{Error: "not_found", Message: "maintenance mode not found"})
+                return
+        }</span>
+        <span class="cov0" title="0">completeAudit(auditID, models.AuditSucceeded, "")
+
+        c.Status(http.StatusNoContent)</span>
+}
+
+// extractServiceScopeValues returns the service names from a list of "service:&lt;name&gt;"
+// scope query params, ignoring "platform" and any other scope type.
+func extractServiceScopeValues(scopes []string) []string <span class="cov8" title="8">{
+        var serviceValues []string
+        for _, raw := range scopes </span><span class="cov9" title="10">{
+                scopeType, scopeValue := parseMaintenanceScope(raw)
+                if scopeType == models.MaintenanceScopeService &amp;&amp; scopeValue != "" </span><span class="cov6" title="5">{
+                        serviceValues = append(serviceValues, scopeValue)
+                }</span>
+        }
+        <span class="cov8" title="8">return serviceValues</span>
+}
+
+// buildActiveMaintenanceModeFilter builds the Mongo filter for enabled records matching any of
+// the requested scopes, whose window actually contains now - `enabled` alone is not enough,
+// since it doesn't auto-clear once `ends_at` passes (see models.MaintenanceMode).
+func buildActiveMaintenanceModeFilter(scopes []string) bson.D <span class="cov6" title="4">{
+        serviceValues := extractServiceScopeValues(scopes)
+
+        scopeOr := bson.A{bson.D{{Key: "scope_type", Value: models.MaintenanceScopePlatform}}}
+        if len(serviceValues) &gt; 0 </span><span class="cov1" title="1">{
+                scopeOr = append(scopeOr, bson.D{
+                        {Key: "scope_type", Value: models.MaintenanceScopeService},
+                        {Key: "scope_value", Value: bson.D{{Key: "$in", Value: serviceValues}}},
+                })
+        }</span>
+
+        <span class="cov6" title="4">now := time.Now()
+        endsOr := bson.A{
+                bson.D{{Key: "ends_at", Value: nil}},
+                bson.D{{Key: "ends_at", Value: bson.D{{Key: "$gt", Value: now}}}},
+        }
+
+        return bson.D{
+                {Key: "enabled", Value: true},
+                {Key: "starts_at", Value: bson.D{{Key: "$lte", Value: now}}},
+                {Key: "$or", Value: scopeOr},
+                {Key: "$and", Value: bson.A{bson.D{{Key: "$or", Value: endsOr}}}},
+        }</span>
+}
+
+// parseMaintenanceScope splits a "type" or "type:value" scope query param into its
+// parts. An unrecognized type is passed through as-is and matched against nothing,
+// since the filter builder only special-cases service.
+func parseMaintenanceScope(raw string) (models.MaintenanceScopeType, string) <span class="cov10" title="12">{
+        parts := strings.SplitN(raw, ":", 2)
+        scopeType := models.MaintenanceScopeType(parts[0])
+        if len(parts) == 2 </span><span class="cov7" title="6">{
+                return scopeType, parts[1]
+        }</span>
+        <span class="cov7" title="6">return scopeType, ""</span>
+}
+</pre>
+		
+		<pre class="file" id="file15" style="display: none">// Package middleware provides Gin middleware for admin-api's route groups.
+package middleware
+
+import (
+        "github.com/gin-gonic/gin"
+        "github.com/sweetrpg/authz-client.go/authz"
+)
+
+// WriteAuth requires a forwarded user bearer token carrying the admin role, verified
+// against auth-api's /authz/check. On success, the resolved canonical user ID is
+// stashed in the context (read via authz.Viewer(c)) for handlers to attribute their
+// audit records to. Fails closed if the acting user cannot be resolved to a canonical ID.
+func WriteAuth(client *authz.Client) gin.HandlerFunc <span class="cov10" title="5">{
+        return authz.RequireAnyRole(client, "admin-api", authz.RoleAdmin)
+}</span>
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">package server
+
+import (
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+        apicores "github.com/sweetrpg/api-core.go/server"
+        _ "github.com/sweetrpg/api-core.go/vo"
+        "github.com/sweetrpg/common.go/logging"
+)
+
+func setupStatusHandlers(g *gin.Engine) <span class="cov8" title="1">{
+        logging.Logger.Info("Setting up status endpoint handlers...")
+
+        </span><span class="cov8" title="1">{
+                a := g.Group("/status")
+                // TODO: a.Use()
+                a.GET("/health", healthHandler)
+        }</span>
+
+        <span class="cov8" title="1">g.GET("/status/ping", pingHandler)</span>
+}
+
+// Health check.
+//
+//         Do a health check of the application and its dependencies and return the results
+//                @Summary                Health check
+//                @Description        Health check
+//                @Tags                        status
+//                @Produce                json
+//                @Success                200                {object}        vo.HealthResponseVO
+//                @Router                        /status/health [get]
+func healthHandler(c *gin.Context) <span class="cov0" title="0">{
+        resp := apicores.HealthHandler(c.Request.Context())
+        status := http.StatusOK
+        if resp.Errors &gt; 0 </span><span class="cov0" title="0">{
+                status = http.StatusServiceUnavailable
+        }</span>
+        <span class="cov0" title="0">c.JSON(status, resp)</span>
+}
+
+// Ping the application.
+//
+//         A shallow health check to see if basic responses are working. Returns the date and hostname of the server handling the request.
+//                @Summary                Ping
+//                @Description        Ping
+//                @Tags                        status
+//                @Produce                json
+//                @Success                200                {object}        vo.PingResponseVO
+//                @Router                        /status/ping [get]
+func pingHandler(c *gin.Context) <span class="cov0" title="0">{
+        c.JSON(http.StatusOK, apicores.PingHandler())
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
