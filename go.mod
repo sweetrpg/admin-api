@@ -1,15 +1,15 @@
 module github.com/sweetrpg/admin-api
 
-go 1.26.5
+go 1.26.10
 
 require (
 	github.com/alicebob/miniredis/v2 v2.39.0
 	github.com/getsentry/sentry-go v0.49.0
-	github.com/gin-contrib/cors v1.7.8
+	github.com/gin-contrib/cors v1.7.9
 	github.com/gin-gonic/gin v1.12.0
 	github.com/gomodule/redigo v1.9.3
 	github.com/google/go-github/v76 v76.0.0
-	github.com/grafana/pyroscope-go v1.4.2
+	github.com/grafana/pyroscope-go v1.4.3
 	github.com/joho/godotenv v1.5.1
 	github.com/penglongli/gin-metrics v0.1.13
 	github.com/samber/slog-gin v1.21.1
@@ -21,8 +21,8 @@ require (
 	github.com/sweetrpg/authz-client.go v0.2.0
 	github.com/sweetrpg/common.go v0.0.16
 	github.com/sweetrpg/mongodb.go v0.0.193
-	go.mongodb.org/mongo-driver v1.17.9
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.72.0
+	go.mongodb.org/mongo-driver v1.17.10
 	go.opentelemetry.io/otel v1.47.0
 	go.opentelemetry.io/otel/trace v1.47.0
 )
