@@ -178,11 +178,11 @@ func listMaintenanceModes(c *gin.Context) {
 	c.JSON(http.StatusOK, records)
 }
 
-// List active (enabled) maintenance-mode records matching the requested scopes, for
+// List active (enabled and within their date window) maintenance-mode records matching the requested scopes, for
 // consuming frontends.
 //
 //	@Summary		List active maintenance-mode records for a set of scopes
-//	@Description	Returns enabled maintenance-mode records matching any of the requested scopes; platform-scoped records are always included. scope values look like "platform" or "service:catalog".
+//	@Description	Returns active maintenance-mode records (enabled, started, and not yet ended) matching any of the requested scopes; platform-scoped records are always included. scope values look like "platform" or "service:catalog".
 //	@Tags			maintenance-modes
 //	@Produce		json
 //	@Param			scope	query		[]string	true	"Repeated scope filter, e.g. scope=platform&scope=service:catalog"

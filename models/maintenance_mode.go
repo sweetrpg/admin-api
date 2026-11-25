@@ -34,8 +34,8 @@ func (s MaintenanceScopeType) valid() bool {
 
 // MaintenanceMode is the MongoDB document for a platform-wide or service-scoped
 // maintenance state. Unlike BannerMessage, it's a durable on/off record - one per
-// scope, edited in place rather than accumulated - with enabled as the explicit gate;
-// starts_at/ends_at are informational for display only.
+// scope, edited in place rather than accumulated. It is active only while enabled is true
+// and now falls within [starts_at, ends_at); an unset ends_at is open-ended.
 type MaintenanceMode struct {
 	ID          primitive.ObjectID   `bson:"_id,omitempty" json:"id"`
 	ScopeType   MaintenanceScopeType `bson:"scope_type" json:"scope_type"`

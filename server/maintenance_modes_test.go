@@ -94,7 +94,7 @@ func TestBuildActiveMaintenanceModeFilter_ServiceScopeOmittedWhenNotRequested(t 
 
 // TestBuildActiveMaintenanceModeFilter_ExcludesPastEndDate reproduces the bug where a
 // record with enabled=true but an ends_at in the past still matched "active" - enabled
-// never auto-clears on expiry (see models.MaintenanceMode.isStale), so the filter itself
+// never auto-clears on expiry (see models.MaintenanceMode), so the filter itself
 // must exclude expired windows.
 func TestBuildActiveMaintenanceModeFilter_ExcludesPastEndDate(t *testing.T) {
 	filter := buildActiveMaintenanceModeFilter([]string{"platform"})
@@ -151,6 +151,28 @@ func TestBuildActiveMaintenanceModeFilter_ExcludesPastEndDate(t *testing.T) {
 		t.Fatalf("$and clause missing nested $or: %v", andClauses)
 	}
 	t.Fatalf("buildActiveMaintenanceModeFilter() filter = %v, want an $and clause excluding expired records", filter)
+}
+
+func TestBuildActiveMaintenanceModeFilter_ExcludesNotYetStarted(t *testing.T) {
+	before := time.Now()
+	filter := buildActiveMaintenanceModeFilter([]string{"platform"})
+	after := time.Now()
+
+	for _, elem := range filter {
+		if elem.Key != "starts_at" {
+			continue
+		}
+		cond, ok := elem.Value.(bson.D)
+		if !ok || len(cond) != 1 || cond[0].Key != "$lte" {
+			t.Fatalf("starts_at condition = %v, want a single $lte", elem.Value)
+		}
+		now, ok := cond[0].Value.(time.Time)
+		if !ok || now.Before(before) || now.After(after) {
+			t.Errorf("starts_at $lte = %v, want the current time", cond[0].Value)
+		}
+		return
+	}
+	t.Fatalf("filter = %v, want a starts_at clause", filter)
 }
 
 // scopeOrClause extracts the $or clause from a filter built by

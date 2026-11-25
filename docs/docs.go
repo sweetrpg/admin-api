@@ -676,7 +676,7 @@ const docTemplate = `{
         },
         "/maintenance-modes/active": {
             "get": {
-                "description": "Returns enabled maintenance-mode records matching any of the requested scopes; platform-scoped records are always included. scope values look like \"platform\" or \"service:catalog\".",
+                "description": "Returns active maintenance-mode records (enabled, started, and not yet ended) matching any of the requested scopes; platform-scoped records are always included. scope values look like \"platform\" or \"service:catalog\".",
                 "produces": [
                     "application/json"
                 ],
